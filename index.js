@@ -2,7 +2,6 @@ require('dotenv').config()
 const express = require("express");
 const app = express();
 const mongoose = require('mongoose')
-
 //JSON
 const bodyParser = require('body-parser')
 app.use(bodyParser.json())
@@ -19,3 +18,4 @@ app.use('/demo',demoRoutes)
 
 //API
 app.listen(3000,()=>console.log('hi'))
+app.use('/images',express.static(__dirname + '/routes/uploads'))
