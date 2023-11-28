@@ -13,8 +13,10 @@ db.on('error',()=>console.log('choda'))
 
 //Routing
 const demoRoutes = require('./routes/demo');
+const authRoutes = require('./routes/auth');
 const exp = require('constants');
-app.use('/demo',demoRoutes)
+app.use('/demo',demoRoutes);
+app.use('/auth',authRoutes)
 
 //API
 app.listen(3000,()=>console.log('hi'))

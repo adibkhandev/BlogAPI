@@ -13,8 +13,8 @@ let getBlog = async(req,res,next) =>{
         blog = await Blog.findById(req.params.id)
         if(!blog){
             return res
-                    .status(404)
-                    .json({message:'No blogs found'})
+            .status(404)
+            .json({message:'No blogs found'})
         }
     } catch(err){
            return res
@@ -24,6 +24,48 @@ let getBlog = async(req,res,next) =>{
     res.blog = blog
     next()
 }
+
+
+//CREATE
+
+var multer = require('multer');
+ 
+var storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join( __dirname,'uploads'))
+    },
+    filename:(req,file,cb)=>{
+         cb(null,file.fieldname + Date.now() + '.jpg')
+    }
+
+});
+ 
+var upload = multer({ storage: storage });
+const fs = require('fs')
+const path = require('path')
+
+
+router.post('/add', upload.single('img') ,async(req,res) => {
+   
+       const blog = new Blog({
+          title:req.body.title,
+          blog:req.body.blog,
+          img:'/images/' + req.file.filename
+      })  
+   try{
+       const newBlog = await blog.save() 
+       res
+          .status(201)
+          .json(newBlog)
+
+   } catch(err){
+       res
+         .status(400)
+         .json({messaage:err.message})
+   }
+})
+
+
 
 
 //READ
@@ -89,43 +131,5 @@ router.delete('/delete/:id',getBlog, async (req,res)=>{
 })
 
 
-//CREATE
-
-var multer = require('multer');
- 
-var storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join( __dirname,'uploads'))
-    },
-    filename:(req,file,cb)=>{
-         cb(null,file.fieldname + Date.now() + '.jpg')
-    }
-
-});
- 
-var upload = multer({ storage: storage });
-const fs = require('fs')
-const path = require('path')
-
-
-router.post('/add', upload.single('img') ,async(req,res) => {
-   
-       const blog = new Blog({
-          title:req.body.title,
-          blog:req.body.blog,
-          img:'/images/' + req.file.filename
-      })  
-   try{
-       const newBlog = await blog.save() 
-       res
-          .status(201)
-          .json(newBlog)
-
-   } catch(err){
-       res
-         .status(400)
-         .json({messaage:err.message})
-   }
-})
 
 module.exports = router
