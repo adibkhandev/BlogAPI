@@ -5,6 +5,7 @@ const User = require('../models/user')
 const refreshTokenDb = require('../models/refreshToken')
 const saltRounds = 10
 dotenv.config()
+
 const addToDb = async(token) => {
     const newToken = new refreshTokenDb({
         token:token
@@ -30,10 +31,13 @@ const userRegister = async(req,res,next) => {
           res.status(404).json({'message':'ase already'})
       }
       else{
+        console.log(req.body,'username')
         bcrypt.hash(req.body.password,saltRounds,async(err,hash)=>{
             const newUser = new User({
                 username:req.body.username,
-                password:hash
+                password:hash,
+                pfp:req.file?'/images/' + req.file.filename:null,
+                skills:req.body.skills? JSON.parse(req.body.skills):[]
             })
             const token = generateAccessToken(req.body.username,hash)
             req.token = token
@@ -41,7 +45,7 @@ const userRegister = async(req,res,next) => {
             req.refreshToken = refreshToken
             try{
                 const user = await newUser.save()
-                addToDb(refreshToken)
+                req.user = user
                 return next()
                     
             } catch(err){
@@ -72,7 +76,7 @@ const userLogin = async(req,res,next) => {
                         req.token = token
                         const refreshToken = generateRefreshToken(req.body.username,user.password)
                         req.refreshToken = refreshToken
-                        addToDb(refreshToken)
+                        req.user = user
                         return next()
                     }
                     if(!result){

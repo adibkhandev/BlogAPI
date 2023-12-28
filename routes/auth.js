@@ -5,15 +5,27 @@ const User = require('../models/user')
 const refreshTokenDb = require('../models/refreshToken')
 const { userRegister , userLogin , tokenRefresh}  = require('../middlewares/token');
 router.use(cors()) 
+var multer = require('multer');
+const path = require('path')
+var storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join( __dirname,'uploads'))
+    },
+    filename:(req,file,cb)=>{
+         cb(null,file.fieldname + Date.now() + '.jpg')
+    }
 
-
-router.post('/register',userRegister,(req,res)=>{
+});
+ 
+var upload = multer({ storage: storage });
+router.post('/register',upload.single('pfp'),userRegister,(req,res)=>{
   console.log(req.refreshToken,'token')
     res
       .status(201)
       .json({
         accesstoken:req.token,
         refreshtoken:req.refreshToken,
+        user:req.user,
       })
 })
 router.post('/login',userLogin,(req,res)=>{
@@ -22,6 +34,7 @@ router.post('/login',userLogin,(req,res)=>{
     .json({
       accesstoken:req.token,
       refreshtoken:req.refreshToken,
+      user:req.user,
     })
 })
 

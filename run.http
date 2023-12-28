@@ -1,0 +1,8 @@
+POST http://127.0.0.1:3000/auth/register
+content-type: application/json
+
+{
+    "username": "sample222",
+    "password": "lesgo",
+    "skills":["hi","ji"]
+}
