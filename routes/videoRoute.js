@@ -44,6 +44,10 @@ router.post('/upload',upload.fields(
      { 
        name: 'videoFile', 
        maxCount: 1 
+     },
+     {
+      name: 'courseCoverPhoto', 
+      maxCount: 1 
      }
    ]
  ),courseUpload,(req,res) => {
@@ -52,7 +56,8 @@ router.post('/upload',upload.fields(
     .status(201)
     .json({
        data:{
-          video: req.video      
+          video: req.video,
+          course:req.course      
        }
 
     })

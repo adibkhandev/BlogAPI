@@ -23,7 +23,24 @@ const courseUpload = async(req,res,next) => {
         try {
             const videoSaved = await newVideo.save()
             req.video = videoSaved
-            next()
+            if(videoSaved){
+                 try{
+                    const newCourse = new Course({
+                        title:req.body.courseTitle,
+                        description:req.body.courseDescription,
+                        coverPhotoLink:'/images/' + req.files.courseCoverPhoto[0].filename,
+                        videos:[videoSaved._id]
+                    })
+                    const courseSaved = await newCourse.save()
+                    req.course = courseSaved
+                    next()
+                 } catch(err){
+                      res.status(400).json({err:"Couldn't save course"})
+                 }
+            }
+            else{
+                res.status(400).json({err:"Couldn't save video"})
+            }
             
         } catch(err){
             res.status(500).json({err:err})     
