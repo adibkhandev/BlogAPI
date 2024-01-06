@@ -35,6 +35,7 @@ const userRegister = async(req,res,next) => {
         bcrypt.hash(req.body.password,saltRounds,async(err,hash)=>{
             const newUser = new User({
                 username:req.body.username,
+                userType:req.body.userType,
                 password:hash,
                 pfp:req.file?'/images/' + req.file.filename:null,
                 skills:req.body.skills? JSON.parse(req.body.skills):[]
