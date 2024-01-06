@@ -47,8 +47,9 @@ router.post('/upload',upload.fields(
      }
    ]
  ),courseUpload,(req,res) => {
-    res
-    .status(200)
+  console.log(req.headers['authorization'],'auth') 
+  res
+    .status(201)
     .json({
        data:{
           video: req.video      
