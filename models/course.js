@@ -10,12 +10,23 @@ const courseSchema = new mongoose.Schema({
     },
     coverPhotoLink:{
         type:String,
-        required:true,
+        required:false,
     },
-    videos:[{
+    topics:[{
         type: mongoose.Schema.ObjectId,
-        ref: 'Video',
+        ref: 'Topic',
         required: true
-    }]
+    }],
+    uploadedBy:{
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    skills:{
+        type: Array,
+        required:true
+    }
+}, {
+    timestamps: true
 })
 module.exports = mongoose.model('Course',courseSchema)

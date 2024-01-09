@@ -17,11 +17,11 @@ const checkDb = async(token) => {
     const tokenIsValid = await refreshTokenDb.findOne({token:token})
     return tokenIsValid ? true : false
 }
-const generateAccessToken = (username,password) => {
-    return jwt.sign({username:username,password:password},process.env.SECRET_TOKEN,{expiresIn:'2d'})
+const generateAccessToken = (username,password,id) => {
+    return jwt.sign({username:username,password:password,_id:id},process.env.SECRET_TOKEN,{expiresIn:'2d'})
 }
-const generateRefreshToken = (username,password) => {
-    return jwt.sign({username:username,password:password},process.env.SECRET_RTOKEN,{expiresIn:'80000'})
+const generateRefreshToken = (username,password,id) => {
+    return jwt.sign({username:username,password:password,_id:id},process.env.SECRET_RTOKEN,{expiresIn:'80000'})
 }
 
 const userRegister = async(req,res,next) => {
@@ -40,9 +40,9 @@ const userRegister = async(req,res,next) => {
                 pfp:req.file?'/images/' + req.file.filename:null,
                 skills:req.body.skills? JSON.parse(req.body.skills):[]
             })
-            const token = generateAccessToken(req.body.username,hash)
+            const token = generateAccessToken(req.body.username,hash,newUser._id)
             req.token = token
-            const refreshToken = generateRefreshToken(req.body.username,hash)
+            const refreshToken = generateRefreshToken(req.body.username,hash,newUser._id)
             req.refreshToken = refreshToken
             try{
                 const user = await newUser.save()

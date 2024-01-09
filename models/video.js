@@ -1,5 +1,9 @@
 const mongoose = require('mongoose')
 const videoSchema = new mongoose.Schema({
+    number:{
+        type:Number,
+        required:true,
+    },
     title:{
         type: String,
         required:true
@@ -8,18 +12,10 @@ const videoSchema = new mongoose.Schema({
         type:String,
         required:false
     },
-    coverPhotoLink:{
-        type:String,
-        required:true,
-    },
-    videoLink:{
-        type:String,
-        required:true,
-    },
     uploadedBy:{
         type: mongoose.Schema.ObjectId,
         ref: 'User',
-        required: false
+        required: true
     }
 }, {
     timestamps: true
