@@ -57,7 +57,8 @@ router.post('/upload',upload.fields(
     .json({
        data:{
           video: req.video,
-          course:req.course      
+          course:req.course,  
+          user:req.user,    
        }
 
     })

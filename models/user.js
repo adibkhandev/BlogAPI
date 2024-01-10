@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
     pfp:{
         type:String,
         required:false
-    }
+    },
+    uploadedCourses:[{
+        type:mongoose.Schema.ObjectId,
+        required:false      
+    }]
 })
 module.exports = mongoose.model('User',userSchema)

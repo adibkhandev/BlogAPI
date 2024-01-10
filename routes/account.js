@@ -7,6 +7,7 @@ router.use(cors())
 router.get('/:username',async(req,res)=>{
     try{
       const user = await User.findOne({username:req.params.username})
+      const populatedUser = await user.populate('uploadedCourses')
       res
         .status(200)
         .json({
@@ -14,6 +15,7 @@ router.get('/:username',async(req,res)=>{
             skills:user.skills,
             pfp:user.pfp,
             userType:user.userType,
+            uploadedCourses:populatedUser.uploadedCourses,
         })
   
     } catch(err){

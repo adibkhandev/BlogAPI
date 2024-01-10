@@ -4,7 +4,7 @@ const Course = require('../models/course')
 const Topic = require('../models/topic')
 const path = require('path')
 const jwt = require('jsonwebtoken');
- 
+
 const dotenv = require('dotenv');
 dotenv.config()
 
@@ -13,70 +13,98 @@ const courseUpload = async(req,res,next) => {
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
     console.log(decoded,'decoded')
-    try{
-        const newVideo = new Video({
-            number:1.01,
-            title:req.body.title,
-            description:req.body.description,
-            videoLink:'/videos/' + req.files.videoFile[0].filename,
-            uploadedBy:decoded._id
-        })
-        try {
-            const videoSaved = await newVideo.save()
-            req.video = videoSaved
-            if(videoSaved){
-                 try{
-                     const newTopic = new Topic({
-                         title:req.body.topicTitle,
-                         number:1,
-                         videos:[videoSaved._id]
-                        })
-                    const topicSaved = await newTopic.save()
-                    if(topicSaved){
-                        try{
-                            const newCourse = new Course({
-                                title:req.body.courseTitle,
-                                description:req.body.courseDescription,
-                                coverPhotoLink:'/images/' + req.files.courseCoverPhoto[0].filename,
-                                topics:[topicSaved._id],
-                                uploadedBy:decoded._id,
-                                skills:req.body.skills? JSON.parse(req.body.skills):[]
-                            })
-                            const courseSaved = await newCourse.save()
-                            if(courseSaved){
-                                const populatedCourse = await courseSaved.populate({
-                                    path:'topics',
-                                    populate:{
-                                        path:'videos',
-                                        model:'Video',
-                                    }
+    if(decoded){
+        try{
+            const userInstance = await User.findOne({_id:decoded._id})
+            try{
+                const newVideo = new Video({
+                    number:1.01,
+                    title:req.body.title,
+                    description:req.body.description,
+                    videoLink:'/videos/' + req.files.videoFile[0].filename,
+                    uploadedBy:decoded._id
+                })
+                try {
+                    const videoSaved = await newVideo.save()
+                    req.video = videoSaved
+                    if(videoSaved){
+                         try{
+                             const newTopic = new Topic({
+                                 title:req.body.topicTitle,
+                                 number:1,
+                                 videos:[videoSaved._id]
                                 })
-                                console.log(populatedCourse,'populate')
-                                req.course = populatedCourse
-                                next()
-                            }else{
-                                res.status(400).json({err:"Couldn't save course"})
+                            const topicSaved = await newTopic.save()
+                            if(topicSaved){
+                                try{
+                                    const newCourse = new Course({
+                                        title:req.body.courseTitle,
+                                        description:req.body.courseDescription,
+                                        coverPhotoLink:'/images/' + req.files.courseCoverPhoto[0].filename,
+                                        topics:[topicSaved._id],
+                                        uploadedBy:decoded._id,
+                                        skills:req.body.skills? JSON.parse(req.body.skills):[]
+                                    })
+                                    const courseSaved = await newCourse.save()
+                                    if(courseSaved){
+                                        try{
+                                            userInstance.uploadedCourses.push(courseSaved._id)
+                                            await userInstance.save()
+                                            req.user = userInstance
+                                            try{
+                                                const populatedCourse = await courseSaved.populate({
+                                                    path:'topics',
+                                                    populate:{
+                                                        path:'videos',
+                                                        model:'Video',
+                                                    }
+                                                })
+                                                console.log(populatedCourse,'populate')
+                                                req.course = populatedCourse
+                                                next()
+                                            }catch(err){
+                                                res.status(500).json({err:"Coudn't populate field"})
+                                            }
+                                        }
+                                        catch(err){
+                                            res.status(402).json({err:"Couldn't update user"})
+                                        }
+                                      
+                                        
+                                       
+                                        next()
+                                    }else{
+                                        res.status(402).json({err:"Couldn't save course"})
+                                    }
+                                }catch(err){
+                                    res.status(400).json({err:"Couldn't save course"})
+                                }
                             }
-                        }catch(err){
-                            res.status(400).json({err:"Couldn't save course"})
-                        }
+                            
+                            
+                         } catch(err){
+                              res.status(400).json({err:"Couldn't save topic"})
+                         }
+                    }
+                    else{
+                        res.status(400).json({err:"Couldn't save video"})
                     }
                     
-                    
-                 } catch(err){
-                      res.status(400).json({err:"Couldn't save topic"})
-                 }
+                } catch(err){
+                    res.status(500).json({err:err})     
+                   }
+              } catch(err){
+                    res.status(400).json({err:err})     
             }
-            else{
-                res.status(400).json({err:"Couldn't save video"})
-            }
-            
-        } catch(err){
-            res.status(500).json({err:err})     
-           }
-      } catch(err){
-            res.status(400).json({err:err})     
+        }catch(err){
+           res.status(404).json({err:'Not authorized'})
+        }
     }
+    else{
+        res.status(404).json({err:'Not authorized'})
+    }
+    
+   
 }
 const addVideo = async(req,res,next) => {
     const token = req.headers.authorization.split(' ')[1]
