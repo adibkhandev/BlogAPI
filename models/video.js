@@ -16,6 +16,10 @@ const videoSchema = new mongoose.Schema({
         type: mongoose.Schema.ObjectId,
         ref: 'User',
         required: true
+    },
+    videoLink:{
+        type:String,
+        required:true,
     }
 }, {
     timestamps: true

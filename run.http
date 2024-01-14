@@ -6,3 +6,9 @@ content-type: application/json
     "password": "lesgo",
     "skills":["hi","ji"]
 }
+
+
+###
+
+DELETE http://127.0.0.1:3000/demo/delete/all
+content-type: application/json

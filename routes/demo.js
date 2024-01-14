@@ -2,6 +2,9 @@ const express = require('express')
 const router = express.Router()
 var cors = require('cors');
 const Blog = require('../models/blog')
+const Course = require('../models/course')
+const User = require('../models/user')
+const Video = require('../models/video')
 
 
 //middlewares
@@ -106,10 +109,12 @@ router.patch('/update/:id', getBlog , async(req,res)=>{
 
 //DELETE
 
-router.delete('/all',async(req,res)=>{
+router.delete('/delete/all',async(req,res)=>{
     console.log('called')
     try{
-        await Blog.deleteMany({})
+        await Video.deleteMany({})
+        await User.deleteMany({})
+        await Course.deleteMany({})
         res
          .status(201)
          .json({message:'deleted'})
