@@ -73,9 +73,9 @@ const userLogin = async(req,res,next) => {
                         res.status(500).json({'error':'server failed'})
                     }
                     if(result){
-                        const token = generateAccessToken(req.body.username,user.password)
+                        const token = generateAccessToken(req.body.username,user.password,user._id)
                         req.token = token
-                        const refreshToken = generateRefreshToken(req.body.username,user.password)
+                        const refreshToken = generateRefreshToken(req.body.username,user.password,user._id)
                         req.refreshToken = refreshToken
                         req.user = user
                         return next()
@@ -112,9 +112,9 @@ const tokenRefresh = async(req,res,next) => {
               
                   if(decoded){
                       console.log('verified :',decoded)
-                      const token = generateAccessToken(decoded.username,decoded.password)
+                      const token = generateAccessToken(decoded.username,decoded.password,decoded.id)
                       req.token = token
-                      const refreshToken = generateRefreshToken(decoded.username,decoded.password)
+                      const refreshToken = generateRefreshToken(decoded.username,decoded.password,decoded.id)
                       req.refreshToken = refreshToken
                       return next()
                   }

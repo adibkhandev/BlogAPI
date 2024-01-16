@@ -13,6 +13,7 @@ const topicSchema = new mongoose.Schema({
         ref:'Video',
         required:true,
     }],
+    
 })
 
 module.exports = mongoose.model('Topic',topicSchema)

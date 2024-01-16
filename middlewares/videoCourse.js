@@ -8,6 +8,10 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 dotenv.config()
 
+
+
+
+
 const courseUpload = async(req,res,next) => {
     // console.log(req.files,'files',req.body,path.extname(req.files.coverPhoto[0].originalname))
     const token = req.headers.authorization.split(' ')[1]
@@ -109,46 +113,56 @@ const courseUpload = async(req,res,next) => {
 const addVideo = async(req,res,next) => {
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
+    console.log(req.body)
     if(decoded){
        try{
-          const course = await Course.findOne({_id:req.body.id,uploadedBy:decoded._id})
+          const course = await Course.findOne({_id:req.body.id},{topics:{$slice: -1}})
           if(course){
+            console.log(course.topics[0])
             try{
-                // const topic = await Topic.find({_id:course.id}).sort({ _id: -1 }).limit(1)
-                // const LastVideo = await Video.find({_id:topic.id}).sort({ _id: -1 }).limit(1)
-                const lastVideoID = course.videos.slice(-1)
-                const LastVideo = await Video.find({_id:lastVideoID})
-
+                const topic = await Topic.findOne({_id:course.topics[0]},{videos:{$slice: -1}})
+                const LastVideo = await Video.findOne({_id:topic.videos[0]})
+                console.log(LastVideo,'last')
+                const newNum = LastVideo.number + 0.01;
+                console.log(newNum)
                 try{
                     const newVideo = new Video({
-                        number:LastVideo.number + 0.01,
+                        number:newNum,
                         title:req.body.title,
                         description:req.body.description,
-                        
-                        videoLink:'/videos/' + req.files.videoFile[0].filename,
-                        uploadedBy:decoded._id
+                        videoLink:'/videos/' + req.file.filename,
+                        uploadedBy:decoded._id,
                     })
+                    console.log(newVideo,'mew')
                     const videoSaved = await newVideo.save()
                     if(videoSaved){
                         try{
-                            topic.videos.push(videoSaved._id)
-                            await topic.save()
-                            const populatedCourse = courseSaved.populate({
-                                path:'courses',
+                            console.log(topic,'topic to be added',videoSaved._id)
+                            
+                            const topicSaved = await Topic.updateOne(
+                                {_id:topic._id},
+                                {$push:{
+                                    videos:videoSaved._id
+                                }}
+                            )
+                            const updatedCourse = await Course.findOne({_id:req.body.id})
+                            const populatedCourse = await updatedCourse.populate({
+                                path:'topics',
+                                model:'Topic',
                                 populate:{
                                     path:'videos',
                                     model:'Video',
                                 }
                             })
                             req.course = populatedCourse
+                            req.videoAdded = videoSaved
                             next()
                         }catch(err){
-                            res.status(500).json({err:"Couldn't add video to course"})
+                            res.status(500).json({err:"Couldn't add video to course due to " + err})
                         }
+
                     }
-                    else{
-                        res.status(500).json({err:"Server error : Couldn't not save video"})
-                    }
+                   
                 }catch(err){
                     res.status(400).json({err:"Wrong video credentials"})
                 }
