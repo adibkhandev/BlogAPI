@@ -3,7 +3,7 @@ const router = express.Router()
 var cors = require('cors');
 const Course = require('../models/course')
 const Video = require('../models/video')
-const {courseUpload,addVideo}  = require('../middlewares/videoCourse');
+const {courseUpload,addVideo,addTopic}  = require('../middlewares/videoCourse');
 const fs = require('fs')
 const path = require('path')
 var multer = require('multer');
@@ -44,6 +44,16 @@ router.post('/add/video',upload.single('videoFile'),addVideo,(req,res)=>{
         updatedCourse:req.course,
       }
     })
+})
+
+
+router.post('/add/topic',upload.single('videoFile'),addTopic,(req,res)=>{
+  res.status(201).json({
+    data:{
+      newTopic:req.newTopic,
+      updatedCourse:req.course,
+    }
+  })
 })
 
 

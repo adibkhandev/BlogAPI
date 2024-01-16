@@ -187,6 +187,62 @@ const addVideo = async(req,res,next) => {
 
 
 
+const addTopic = async(req,res,next) => {
+    const token = req.headers.authorization.split(' ')[1]
+    const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
+    console.log(req.body)
+    if(decoded){
+       try{
+          const course = await Course.findOne({_id:req.body.id},{topics:{$slice: -1}})
+          const lastTopic = await Topic.findOne({_id:course.topics[0]})
+          const lastTopicNum = lastTopic.number
+          try{
+            const newVideo = new Video({
+                number:lastTopicNum + 1.01,
+                title:req.body.title,
+                description:req.body.description,
+                videoLink:'/videos/' + req.file.filename,
+                uploadedBy:decoded._id,
+            })
+            const videoSaved = await newVideo.save()
+            try{
+                const newTopic = new Topic({
+                    title:req.body.topicTitle,
+                    number:lastTopicNum+1,
+                    videos:[videoSaved._id]
+                })
+               const topicSaved = await newTopic.save()
+               try{
+                  course.topics.push(topicSaved._id)
+                  const updatedCourse = await course.save()
+                  const populatedCourse = await updatedCourse.populate({
+                    path:'topics',
+                    model:'Topic',
+                    populate:{
+                        path:'videos',
+                        model:'Video',
+                    }
+                 })
+                   req.course = populatedCourse
+                   req.newTopic = topicSaved
+                   next()
+               }catch(err){
+                res.status(500).json({err:'could not add to course'})
+               }
+            }catch(err){
+                res.status(400).json({err:'could not save topic'})
+            }
+          }catch(err){
+            res.status(400).json({err:'could not save video'})
+          }
+       } catch(err){
+         res.status(404).json()
+       }
+    }
+    else{
+        res.status(404).json({err:'Unauthorized'})
+    }
+}
 
 
 
@@ -194,5 +250,4 @@ const addVideo = async(req,res,next) => {
 
 
 
-
-module.exports = {courseUpload,addVideo}
+module.exports = {courseUpload,addVideo,addTopic}
