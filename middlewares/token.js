@@ -24,6 +24,18 @@ const generateRefreshToken = (username,password,id) => {
     return jwt.sign({username:username,password:password,_id:id},process.env.SECRET_RTOKEN,{expiresIn:'80000'})
 }
 
+const tokenVerify = (req,res,next) =>{
+    try{
+        const token = req.headers.authorization.split(' ')[1]
+        const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
+        req.decoded = decoded
+        console.log(token,'ffff')
+        next()
+    } catch{
+        res.status(400).json({data:'fck'})
+    }
+}
+
 const userRegister = async(req,res,next) => {
     try{
       const user = await User.findOne({username:req.body.username})
@@ -139,4 +151,4 @@ const tokenRefresh = async(req,res,next) => {
 }
 
 
-module.exports = {userRegister , userLogin , tokenRefresh}
+module.exports = {userRegister , userLogin , tokenRefresh , tokenVerify}

@@ -190,7 +190,7 @@ const addVideo = async(req,res,next) => {
 const addTopic = async(req,res,next) => {
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
-    console.log(req.body)
+    console.log(decoded,'deded')
     if(decoded){
        try{
           const course = await Course.findOne({_id:req.body.id},{topics:{$slice: -1}})

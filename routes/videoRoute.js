@@ -3,13 +3,16 @@ const router = express.Router()
 var cors = require('cors');
 const Course = require('../models/course')
 const Video = require('../models/video')
+const {tokenVerify} = require('../middlewares/token')
 const {courseUpload,addVideo,addTopic}  = require('../middlewares/videoCourse');
 const fs = require('fs')
 const path = require('path')
 var multer = require('multer');
+const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 router.use(cors()) 
-
+const dotenv = require('dotenv');
+dotenv.config()
 var fileStorage = multer.diskStorage({
    destination: (req, file, cb) => {
        if(file.fieldname=="videoFile"){
@@ -85,5 +88,31 @@ router.post('/upload',upload.fields(
 
     })
 })
+
+
+router.get('/get/:id',tokenVerify,async(req,res)=>{
+  console.log('token',req.headers["authorization"])
+  try{
+    const decoded = req.decoded
+    console.log('decoded=',req.decoded)
+    try{
+      const course =  await Course.findOne({_id:req.params.id})
+      const populatedCourse = await course.populate({
+        path:'topics',
+        model:'Topic',
+        populate:{
+            path:'videos',
+            model:'Video',
+        }
+      })
+      res.status(200).json({data:populatedCourse})  
+    } catch{
+      res.status(404).json({err:'Course not found'})  
+    }
+  } catch(err){
+    res.status(400).json({err:err})  
+  }
+})
+
 
 module.exports = router
