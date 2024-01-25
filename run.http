@@ -12,3 +12,15 @@ content-type: application/json
 
 DELETE http://127.0.0.1:3000/demo/delete/all
 content-type: application/json
+
+
+
+###
+
+
+POST http://127.0.0.1:3000/video/get/explore
+content-type: application/json
+
+{
+    "skill": "Hoe"
+}

@@ -17,6 +17,7 @@ const courseUpload = async(req,res,next) => {
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
     console.log(decoded,'decoded')
+    console.log(req.body.skills,'skills')
     if(decoded){
         try{
             const userInstance = await User.findOne({_id:decoded._id})
@@ -45,6 +46,7 @@ const courseUpload = async(req,res,next) => {
                                         title:req.body.courseTitle,
                                         description:req.body.courseDescription,
                                         coverPhotoLink:'/images/' + req.files.courseCoverPhoto[0].filename,
+                                        videoNumber:1,
                                         topics:[topicSaved._id],
                                         uploadedBy:decoded._id,
                                         skills:req.body.skills? JSON.parse(req.body.skills):[]
@@ -120,7 +122,7 @@ const addVideo = async(req,res,next) => {
           if(course){
             console.log(course.topics[0])
             try{
-                const topic = await Topic.findOne({_id:course.topics[0]},{videos:{$slice: -1}})
+                const topic = await Topic.findOne({_id:req.body.topicId},{videos:{$slice: -1}})
                 const LastVideo = await Video.findOne({_id:topic.videos[0]})
                 console.log(LastVideo,'last')
                 const newNum = LastVideo.number + 0.01;
@@ -135,6 +137,7 @@ const addVideo = async(req,res,next) => {
                     })
                     console.log(newVideo,'mew')
                     const videoSaved = await newVideo.save()
+                    course.videoNumber += 1
                     if(videoSaved){
                         try{
                             console.log(topic,'topic to be added',videoSaved._id)
@@ -205,6 +208,7 @@ const addTopic = async(req,res,next) => {
                 uploadedBy:decoded._id,
             })
             const videoSaved = await newVideo.save()
+            course.videoNumber += 1
             try{
                 const newTopic = new Topic({
                     title:req.body.topicTitle,
@@ -245,9 +249,31 @@ const addTopic = async(req,res,next) => {
 }
 
 
+const courseCompress = async(req,res,next) => {
+    // const token = req.headers.authorization.split(' ')[1]
+    // const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
+    try{
+        const courses = await Course.find({skills:req.body.skill})
+        const compressedCourses =  await Promise.all(courses.map(async(course)=>{
+            const author = await User.findOne({_id:course.uploadedBy})
+            return {
+                id:course._id,
+                name:course.title,
+                cover:course.coverPhotoLink,
+                videos:course.videoNumber,
+                uploaderName:author.username,
+                uploaderPicture:author.pfp,
+            }
+        }))
+        console.log(compressedCourses,'com')
+        req.courses = compressedCourses
+        next()
+    } catch(err){
+        res.status(404).json({err:err})
+    }
+}
 
 
 
 
-
-module.exports = {courseUpload,addVideo,addTopic}
+module.exports = {courseUpload,courseCompress,addVideo,addTopic}

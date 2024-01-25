@@ -12,6 +12,9 @@ const courseSchema = new mongoose.Schema({
         type:String,
         required:false,
     },
+    videoNumber:{
+        type:Number,
+    },
     topics:[{
         type: mongoose.Schema.ObjectId,
         ref: 'Topic',
