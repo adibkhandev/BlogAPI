@@ -3,7 +3,7 @@ const router = express.Router()
 const cors = require('cors');
 const User = require('../models/user')
 const refreshTokenDb = require('../models/refreshToken')
-const { userRegister , userLogin , tokenRefresh}  = require('../middlewares/token');
+const { userUpdate , userRegister , userLogin , tokenRefresh, tokenVerify}  = require('../middlewares/token');
 router.use(cors()) 
 var multer = require('multer');
 const path = require('path')
@@ -28,6 +28,18 @@ router.post('/register',upload.single('pfp'),userRegister,(req,res)=>{
         user:req.user,
       })
 })
+
+router.post('/update',upload.single('pfp'),userUpdate,(req,res)=>{
+  res
+      .status(200)
+      .json({
+        user:req.user,
+        accessToken:req.accessToken,
+        refreshToken:req.refreshToken,
+      })
+})
+
+
 router.post('/login',userLogin,(req,res)=>{
   res
     .status(200)

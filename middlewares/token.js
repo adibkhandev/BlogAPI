@@ -31,7 +31,7 @@ const tokenVerify = (req,res,next) =>{
         req.decoded = decoded
         console.log(token,'ffff')
         next()
-    } catch{
+    } catch(err){
         res.status(400).json({data:'fck'})
     }
 }
@@ -72,6 +72,50 @@ const userRegister = async(req,res,next) => {
         res.status(500).json({message:err})
     }
 }
+
+const userUpdate = async(req,res,next) => {
+    const token = req.headers.authorization.split(' ')[1]
+    console.log(token,'tok')
+    const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
+    console.log(req.body.username,'dec')
+    try {
+      const user = await User.findOne({_id:decoded._id})
+      console.log(user,'us')
+      try{
+        if (req.body.username) {
+            user.username = req.body.username
+        }
+        if(req.body.skills){
+            user.skills = req.body.skills
+        }
+        if(req.file){
+            user.pfp = '/images/' + req.file.filename
+        } 
+          if(req.file || req.body.skills || req.body.username){
+              try {
+                 const updatedUser = await user.save()
+                 req.user = updatedUser
+                 const accessToken = generateAccessToken(updatedUser.username,updatedUser.password,updatedUser._id)
+                 req.accessToken = accessToken
+                 const refreshToken = generateRefreshToken(updatedUser.username,updatedUser.password,updatedUser._id)
+                 req.refreshToken = refreshToken
+                 next()
+              } catch(err){
+               res.status(400).json({data:'local'})
+              }
+          }
+          else{
+            res.status(400).json({message:'User not found'})
+          }
+
+      }catch(err){
+        res.status(505).json({message:'User not found'})
+      }
+    } catch(err){
+        res.status(404).json({message:'User not found'})
+    }
+}
+
 
 const userLogin = async(req,res,next) => {
     try{
@@ -151,4 +195,4 @@ const tokenRefresh = async(req,res,next) => {
 }
 
 
-module.exports = {userRegister , userLogin , tokenRefresh , tokenVerify}
+module.exports = { userUpdate , userRegister , userLogin , tokenRefresh , tokenVerify}
