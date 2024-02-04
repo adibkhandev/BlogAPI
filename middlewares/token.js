@@ -5,7 +5,6 @@ const User = require('../models/user')
 const refreshTokenDb = require('../models/refreshToken')
 const saltRounds = 10
 dotenv.config()
-
 const addToDb = async(token) => {
     const newToken = new refreshTokenDb({
         token:token
@@ -21,7 +20,7 @@ const generateAccessToken = (username,password,id) => {
     return jwt.sign({username:username,password:password,_id:id},process.env.SECRET_TOKEN,{expiresIn:'2d'})
 }
 const generateRefreshToken = (username,password,id) => {
-    return jwt.sign({username:username,password:password,_id:id},process.env.SECRET_RTOKEN,{expiresIn:'80000'})
+    return jwt.sign({username:username,password:password,_id:id},process.env.SECRET_RTOKEN,{expiresIn:'2d'})
 }
 
 const tokenVerify = (req,res,next) =>{
@@ -72,7 +71,7 @@ const userRegister = async(req,res,next) => {
         res.status(500).json({message:err})
     }
 }
-
+const fs = require('fs')
 const userUpdate = async(req,res,next) => {
     const token = req.headers.authorization.split(' ')[1]
     console.log(token,'tok')
@@ -86,12 +85,31 @@ const userUpdate = async(req,res,next) => {
             user.username = req.body.username
         }
         if(req.body.skills){
-            user.skills = req.body.skills
+            user.skills = JSON.parse(req.body.skills)
         }
         if(req.file){
-            user.pfp = '/images/' + req.file.filename
+                fs.unlink(__dirname + './../routes/uploads' + user.pfp, (err) => {
+                    if (err) {
+                        console.log("failed to delete local image:"+err);
+                    } else {
+                        console.log('successfully deleted local image');                                
+                    }
+                });
+                user.pfp = '/images/' + req.file.filename
+           
         } 
-          if(req.file || req.body.skills || req.body.username){
+        if(req.body.removePfp){
+            fs.unlink(__dirname + './../routes/uploads' + user.pfp, (err) => {
+                if (err) {
+                    console.log("failed to delete local image:"+err);
+                } else {
+                    console.log(user.pfp,'after updaye')
+                    console.log('successfully deleted local image');                                
+                }
+            });
+            user.pfp = null
+        }
+          if(req.file || req.body.skills || req.body.username || req.body.removePfp){
               try {
                  const updatedUser = await user.save()
                  req.user = updatedUser
@@ -105,7 +123,7 @@ const userUpdate = async(req,res,next) => {
               }
           }
           else{
-            res.status(400).json({message:'User not found'})
+            res.status(400).json({message:'Data not found'})
           }
 
       }catch(err){
@@ -158,36 +176,24 @@ const userLogin = async(req,res,next) => {
 
 const tokenRefresh = async(req,res,next) => {
     console.log(req.body.refreshToken,'token sent')
-    const refreshList = ['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImtoYW42OTkiLCJwYXNzd29yZCI6IiQyYiQxMCRNbFFDU3piQ3FsQktmYmFtdlZlcTVlbnJHNUFnb2pvUUNtV2gxRDFEVnV3TVhJVmYuUVE4eSIsImlhdCI6MTcwMTE0ODk4NCwiZXhwIjoxNzAxMTQ4OTk0fQ.drosUR71jRbd7oPbJv8RGoWihyVS9-rpXMAVbk4NyNY'];
     if(req.body.refreshToken){
         try{
-            const tokenInDb = await refreshTokenDb.findOne({token:req.body.refreshToken})
-            if(tokenInDb){
-                console.log('token found in db',tokenInDb)
-                const decoded = jwt.verify(req.body.refreshToken,process.env.SECRET_RTOKEN)
-              
-                  if(decoded){
+                const decoded = jwt.verify(req.body.refreshToken, process.env.SECRET_RTOKEN)
+                console.log(decoded,'korse')  
+                if(decoded){
                       console.log('verified :',decoded)
-                      const token = generateAccessToken(decoded.username,decoded.password,decoded.id)
+                      const token = generateAccessToken(decoded.username,decoded.password,decoded._id)
                       req.token = token
-                      const refreshToken = generateRefreshToken(decoded.username,decoded.password,decoded.id)
+                      const refreshToken = generateRefreshToken(decoded.username,decoded.password,decoded._id)
                       req.refreshToken = refreshToken
                       return next()
                   }
                   else{
                     res.status(500).json({'error':'token not verified'})
                   }
-
-            }
-            else{
-                res.status(404).json({'message':'token not found'})
-            }
         } catch(err){
             res.status(400).json({'message':'token not recognized'})
         }
-
-
-
     }
     else{
         res.status(401).json({message:'yess'})
