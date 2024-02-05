@@ -257,8 +257,9 @@ const courseCompress = async(req,res,next) => {
         const compressedCourses =  await Promise.all(courses.map(async(course)=>{
             const author = await User.findOne({_id:course.uploadedBy})
             return {
-                id:course._id,
-                name:course.title,
+                courseId:course._id,
+                userId:author._id,
+                courseName:course.title,
                 cover:course.coverPhotoLink,
                 videos:course.videoNumber,
                 uploaderName:author.username,
