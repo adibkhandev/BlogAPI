@@ -4,7 +4,7 @@ var cors = require('cors');
 const Course = require('../models/course')
 const Video = require('../models/video')
 const {tokenVerify} = require('../middlewares/token')
-const {courseUpload,courseCompress,addVideo,addTopic}  = require('../middlewares/videoCourse');
+const {courseUpload,courseCompress,addVideo,addTopic,deleteVideo}  = require('../middlewares/videoCourse');
 const fs = require('fs')
 const path = require('path')
 var multer = require('multer');
@@ -115,6 +115,11 @@ router.get('/get/:id',tokenVerify,async(req,res)=>{
   }
 })
 
+router.post('/delete/:courseId/:topicId',deleteVideo,(req,res)=>{
+  res.status(200).json({
+    data:'ads'
+  })
+})
 
 router.post('/get/explore',courseCompress,async(req,res)=>{
    res.status(200).json({

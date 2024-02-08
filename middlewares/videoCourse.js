@@ -9,11 +9,41 @@ const dotenv = require('dotenv');
 dotenv.config()
 
 
-
+const deleteVideo = async(req,res,next) => {
+    try{
+        const token = req.headers.authorization.split(' ')[1]
+        const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
+        const userInstance = await User.findOne({_id:decoded._id})
+        try{
+            const course = await Course.findOne({_id:req.params.courseId})
+            if(course.topics.includes(req.params.topicId)){
+                try{
+                    await Promise.all(req.body.videos.map(async(video)=>{
+                        await Video.findOneAndDelete({_id:req.body._id})
+                    }))
+                    next()
+                } catch{
+                    res.status(400).json({err:'could not map'})
+                }
+            }
+        } catch{
+            res.status(500).json({err:'course not found'})
+        }
+    } catch {
+        res.status(400).json({err:'Unauthorized'})
+    }
+}
 
 
 const courseUpload = async(req,res,next) => {
     // console.log(req.files,'files',req.body,path.extname(req.files.coverPhoto[0].originalname))
+    
+    try{
+       
+    } catch{
+
+    }
+    
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
     console.log(decoded,'decoded')
@@ -277,4 +307,4 @@ const courseCompress = async(req,res,next) => {
 
 
 
-module.exports = {courseUpload,courseCompress,addVideo,addTopic}
+module.exports = {courseUpload,courseCompress,addVideo,addTopic,deleteVideo}
