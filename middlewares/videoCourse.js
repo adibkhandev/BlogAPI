@@ -7,7 +7,10 @@ const jwt = require('jsonwebtoken');
 
 const dotenv = require('dotenv');
 dotenv.config()
+const ffmpegStatic = require('ffmpeg-static');
+const ffmpeg = require('fluent-ffmpeg');
 
+ffmpeg.setFfmpegPath(ffmpegStatic);
 
 const deleteVideo = async(req,res,next) => {
     try{
@@ -34,23 +37,42 @@ const deleteVideo = async(req,res,next) => {
     }
 }
 
-
+const fs = require('fs')
 const courseUpload = async(req,res,next) => {
     // console.log(req.files,'files',req.body,path.extname(req.files.coverPhoto[0].originalname))
     
-    try{
+    try {
        
+         const inputVid = './routes/uploads/videos/' + req.files.videoFile[0].filename
+         const outputVid = './routes/uploads/videos/' + req.files.videoFile[0].filename.replace('mp4','avi')
+         ffmpeg(inputVid)
+            .format('avi')
+            .on('error', (err) => console.error('Error:', err))
+            .on('end', () =>{
+                console.log('Conversion done!')
+                fs.unlink(inputVid,(err)=>{
+                    console.log(err)
+                })
+            })
+            .save(outputVid, { end: true })
     } catch{
-
+         console.log('error in ffmpeg')
     }
     
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
-    console.log(decoded,'decoded')
-    console.log(req.body.skills,'skills')
+    // console.log(decoded,'decoded')
+    // console.log(req.body.skills,'skills')
     if(decoded){
         try{
             const userInstance = await User.findOne({_id:decoded._id})
+            
+            try{
+                
+            } catch{
+
+            }
+            
             try{
                 const newVideo = new Video({
                     number:1.01,
