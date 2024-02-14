@@ -38,6 +38,7 @@ app.get('/videos/:filename',(req,res)=>{
         const outputVid = './routes/uploads/videos/' + filename
         ffmpeg(inputVid)
            .format('mp4')
+           .outputOptions(['-crf 16'])
            .on('error', (err) => console.error('Error:', err))
            .on('end', () =>{
                console.log('Conversion done!')

@@ -2,13 +2,20 @@ const express = require('express')
 const router = express.Router()
 const cors = require('cors');
 const User = require('../models/user')
+const {subscribeCourse} = require('../middlewares/account')
 router.use(cors()) 
+
+router.post('/subscribe',subscribeCourse,(req,res)=>{
+    res.json({
+        user:req.updatedUser
+    })
+})
 
 router.get('/:username',async(req,res)=>{
     try{
       const UserFound = await User.findOne({username:req.params.username})
       const populatedUser = await UserFound.populate({
-        path:'uploadedCourses',
+        path:'uploadedCourses subscribedCourses',
         model:'Course',
         populate:{
             path:'topics',
@@ -29,6 +36,7 @@ router.get('/:username',async(req,res)=>{
             pfp:populatedUser.pfp,
             userType:populatedUser.userType,
             uploadedCourses:populatedUser?populatedUser.uploadedCourses:null,
+            subscribedCourses:populatedUser?populatedUser.subscribedCourses:null,
             thumbnails:populatedUser.uploadedCourses.map(courses=>courses.coverPhotoLink)
 
         })

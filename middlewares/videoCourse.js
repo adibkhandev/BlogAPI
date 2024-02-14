@@ -4,6 +4,7 @@ const Course = require('../models/course')
 const Topic = require('../models/topic')
 const path = require('path')
 const jwt = require('jsonwebtoken');
+const fs = require('fs')
 
 const dotenv = require('dotenv');
 dotenv.config()
@@ -37,27 +38,9 @@ const deleteVideo = async(req,res,next) => {
     }
 }
 
-const fs = require('fs')
 const courseUpload = async(req,res,next) => {
     // console.log(req.files,'files',req.body,path.extname(req.files.coverPhoto[0].originalname))
     
-    try {
-       
-         const inputVid = './routes/uploads/videos/' + req.files.videoFile[0].filename
-         const outputVid = './routes/uploads/videos/' + req.files.videoFile[0].filename.replace('mp4','avi')
-         ffmpeg(inputVid)
-            .format('avi')
-            .on('error', (err) => console.error('Error:', err))
-            .on('end', () =>{
-                console.log('Conversion done!')
-                fs.unlink(inputVid,(err)=>{
-                    console.log(err)
-                })
-            })
-            .save(outputVid, { end: true })
-    } catch{
-         console.log('error in ffmpeg')
-    }
     
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
@@ -66,11 +49,22 @@ const courseUpload = async(req,res,next) => {
     if(decoded){
         try{
             const userInstance = await User.findOne({_id:decoded._id})
-            
-            try{
-                
+            try {
+               
+                 const inputVid = './routes/uploads/videos/' + req.files.videoFile[0].filename
+                 const outputVid = './routes/uploads/videos/' + req.files.videoFile[0].filename.replace('mp4','avi')
+                 ffmpeg(inputVid)
+                    .format('avi')
+                    .on('error', (err) => console.error('Error:', err))
+                    .on('end', () =>{
+                        console.log('Conversion done!')
+                        fs.unlink(inputVid,(err)=>{
+                            console.log(err)
+                        })
+                    })
+                    .save(outputVid, { end: true })
             } catch{
-
+                 console.log('error in ffmpeg')
             }
             
             try{
@@ -81,9 +75,9 @@ const courseUpload = async(req,res,next) => {
                     videoLink:'/videos/' + req.files.videoFile[0].filename,
                     uploadedBy:decoded._id
                 })
+                const videoSaved = await newVideo.save()
+                req.video = videoSaved
                 try {
-                    const videoSaved = await newVideo.save()
-                    req.video = videoSaved
                     if(videoSaved){
                          try{
                              const newTopic = new Topic({
