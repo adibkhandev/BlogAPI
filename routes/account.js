@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const cors = require('cors');
 const User = require('../models/user')
-const {subscribeCourse} = require('../middlewares/account')
+const {subscribeCourse,unSubscribeCourse} = require('../middlewares/account')
 router.use(cors()) 
 
 router.post('/subscribe',subscribeCourse,(req,res)=>{
@@ -10,6 +10,14 @@ router.post('/subscribe',subscribeCourse,(req,res)=>{
         user:req.updatedUser
     })
 })
+
+
+router.post('/unsubscribe',unSubscribeCourse,(req,res)=>{
+    res.json({
+        user:req.updatedUser
+    })
+})
+
 
 router.get('/:username',async(req,res)=>{
     try{
