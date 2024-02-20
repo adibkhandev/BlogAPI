@@ -22,13 +22,18 @@ const deleteVideo = async(req,res,next) => {
             const course = await Course.findOne({_id:req.params.courseId})
             if(course.topics.includes(req.params.topicId)){
                 try{
+                    console.log(req.body.videos,'dasdsadsadsa')
                     await Promise.all(req.body.videos.map(async(video)=>{
-                        await Video.findOneAndDelete({_id:req.body._id})
+                        await Video.findOneAndDelete({_id:video})
                     }))
+                    console.log('crossing promise')
                     next()
                 } catch{
                     res.status(400).json({err:'could not map'})
                 }
+            }
+            else{
+                res.status(500).json({err:'Topic not found'})
             }
         } catch{
             res.status(500).json({err:'course not found'})

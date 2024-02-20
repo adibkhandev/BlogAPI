@@ -116,9 +116,10 @@ router.get('/get/:id',tokenVerify,async(req,res)=>{
 })
 
 router.post('/delete/:courseId/:topicId',deleteVideo,(req,res)=>{
+  console.log('passing next')  
   res.status(200).json({
-    data:'ads'
-  })
+      data:'deleted successfully'
+    })
 })
 
 router.post('/get/explore',courseCompress,async(req,res)=>{
