@@ -25,6 +25,10 @@ const courseSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    subscribedCount:{
+        type:Number,
+        default:0,
+    },
     skills:{
         type: Array,
         required:true

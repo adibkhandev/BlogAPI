@@ -14,8 +14,10 @@ const subscribeCourse = async(req,res,next) => {
         if(userInstance && courseInstance){
             if(userInstance.subscribedCourses.includes(courseInstance._id)) res.status(400).json('Subscribed already')
             else try{
+                courseInstance.subscribedCount = courseInstance.subscribedCount + 1
                 userInstance.subscribedCourses.push(courseInstance._id)
                 await userInstance.save()
+                await courseInstance.save()
                 req.updatedUser = userInstance 
                 next()
             } catch {
@@ -40,8 +42,11 @@ const unSubscribeCourse = async(req,res,next) => {
         const userInstance = await User.findOne({_id:decoded._id})
         const courseInstance = await Course.findOne({_id:req.body.courseId})
         if(userInstance && courseInstance){
+            console.log(courseInstance.subscribedCount,'cpint')
             try{
+                courseInstance.subscribedCount = courseInstance.subscribedCount - 1
                 userInstance.subscribedCourses.pop(courseInstance._id)
+                await courseInstance.save()
                 await userInstance.save()
                 req.updatedUser = userInstance 
                 next()

@@ -24,10 +24,23 @@ const deleteVideo = async(req,res,next) => {
                 try{
                     console.log(req.body.videos,'dasdsadsadsa')
                     await Promise.all(req.body.videos.map(async(video)=>{
-                        await Video.findOneAndDelete({_id:video})
+                        console.log(video,'mapping')
+                        const deletedVideo = await Video.findOneAndDelete({_id:video})
+                        if(deletedVideo){
+                            const inputVid = './routes/uploads/' +  deletedVideo.videoLink.replace('mp4','avi')
+                                fs.unlink(inputVid,(err)=>{
+                                    if(err) console.log(err)
+                                    else {
+                                       console.log('deleted')
+                                    }
+                            })
+                        }
+                        else{
+                            console.log('error')
+                        }
                     }))
-                    console.log('crossing promise')
-                    next()
+            console.log('crossing promise')
+            next()
                 } catch{
                     res.status(400).json({err:'could not map'})
                 }
@@ -169,67 +182,61 @@ const addVideo = async(req,res,next) => {
     console.log(req.body)
     if(decoded){
        try{
-          const course = await Course.findOne({_id:req.body.id},{topics:{$slice: -1}})
-          if(course){
-            console.log(course.topics[0])
-            try{
-                const topic = await Topic.findOne({_id:req.body.topicId},{videos:{$slice: -1}})
-                const LastVideo = await Video.findOne({_id:topic.videos[0]})
-                console.log(LastVideo,'last')
-                const newNum = LastVideo.number + 0.01;
-                console.log(newNum)
-                try{
-                    const newVideo = new Video({
-                        number:newNum,
-                        title:req.body.title,
-                        description:req.body.description,
-                        videoLink:'/videos/' + req.file.filename,
-                        uploadedBy:decoded._id,
-                    })
-                    console.log(newVideo,'mew')
-                    const videoSaved = await newVideo.save()
-                    course.videoNumber += 1
-                    if(videoSaved){
-                        try{
-                            console.log(topic,'topic to be added',videoSaved._id)
-                            
-                            const topicSaved = await Topic.updateOne(
-                                {_id:topic._id},
-                                {$push:{
-                                    videos:videoSaved._id
-                                }}
-                            )
-                            const updatedCourse = await Course.findOne({_id:req.body.id})
-                            const populatedCourse = await updatedCourse.populate({
-                                path:'topics',
-                                model:'Topic',
-                                populate:{
-                                    path:'videos',
-                                    model:'Video',
-                                }
-                            })
-                            req.course = populatedCourse
-                            req.videoAdded = videoSaved
-                            next()
-                        }catch(err){
-                            res.status(500).json({err:"Couldn't add video to course due to " + err})
-                        }
-
-                    }
-                   
-                }catch(err){
-                    res.status(400).json({err:"Wrong video credentials"})
-                }
-
-            }catch(err){
-                res.status(404).json({err:err})
+        const course = await Course.findOne({_id:req.body.id},{topics:{$slice: -1}})
+        console.log(course.topics[0])
+        const topic = await Topic.findOne({_id:req.body.topicId},{videos:{$slice: -1}})
+        const LastVideo = await Video.findOne({_id:topic.videos[0]})
+        console.log(LastVideo,'last')
+        const newNum =LastVideo ? LastVideo.number + 0.01: topic.number + 0.01;
+        console.log(newNum)
+        try {
+            const inputVid = './routes/uploads/videos/' + req.file.filename
+            const outputVid = './routes/uploads/videos/' + req.file.filename.replace('mp4','avi')
+            ffmpeg(inputVid)
+            .format('avi')
+            .on('error', (err) => console.error('Error:', err))
+            .on('end', () =>{
+                console.log('Conversion done!')
+                fs.unlink(inputVid,(err)=>{
+                    console.log(err)
+                })
+            })
+            .save(outputVid, { end: true })
+        } catch{
+                console.log('error in ffmpeg')
+        }
+        const newVideo = new Video({
+            number:newNum,
+            title:req.body.title,
+            description:req.body.description,
+            videoLink:'/videos/' + req.file.filename,
+            uploadedBy:decoded._id,
+        })
+        console.log(newVideo,'mew')
+        const videoSaved = await newVideo.save()
+        course.videoNumber += 1
+        console.log(topic,'topic to be added',videoSaved._id)
+        
+        const topicSaved = await Topic.updateOne(
+            {_id:topic._id},
+            {$push:{
+                videos:videoSaved._id
+            }}
+        )
+        const updatedCourse = await Course.findOne({_id:req.body.id})
+        const populatedCourse = await updatedCourse.populate({
+            path:'topics',
+            model:'Topic',
+            populate:{
+                path:'videos',
+                model:'Video',
             }
-          }
-          else{
-            res.status(400).json({err:"Course not found"})
-          }
+        })
+        req.course = populatedCourse
+        req.videoAdded = videoSaved
+        next()
        } catch(err){
-         res.status(404).json()
+         res.status(500).json()
        }
     }
     else{
@@ -246,11 +253,10 @@ const addTopic = async(req,res,next) => {
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
     console.log(decoded,'deded')
     if(decoded){
-       try{
+        try{
           const course = await Course.findOne({_id:req.body.id},{topics:{$slice: -1}})
           const lastTopic = await Topic.findOne({_id:course.topics[0]})
           const lastTopicNum = lastTopic.number
-          try{
             const newVideo = new Video({
                 number:lastTopicNum + 1.01,
                 title:req.body.title,
@@ -259,15 +265,29 @@ const addTopic = async(req,res,next) => {
                 uploadedBy:decoded._id,
             })
             const videoSaved = await newVideo.save()
+            try {
+                const inputVid = './routes/uploads/videos/' + req.file.filename
+                const outputVid = './routes/uploads/videos/' + req.file.filename.replace('mp4','avi')
+                ffmpeg(inputVid)
+                .format('avi')
+                .on('error', (err) => console.error('Error:', err))
+                .on('end', () =>{
+                    console.log('Conversion done!')
+                    fs.unlink(inputVid,(err)=>{
+                        console.log(err)
+                    })
+                })
+                .save(outputVid, { end: true })
+            } catch{
+                    console.log('error in ffmpeg')
+            }
             course.videoNumber += 1
-            try{
                 const newTopic = new Topic({
                     title:req.body.topicTitle,
                     number:lastTopicNum+1,
                     videos:[videoSaved._id]
                 })
                const topicSaved = await newTopic.save()
-               try{
                   course.topics.push(topicSaved._id)
                   const updatedCourse = await course.save()
                   const populatedCourse = await updatedCourse.populate({
@@ -282,17 +302,8 @@ const addTopic = async(req,res,next) => {
                    req.newTopic = topicSaved
                    next()
                }catch(err){
-                res.status(500).json({err:'could not add to course'})
-               }
-            }catch(err){
-                res.status(400).json({err:'could not save topic'})
+                  res.status(404).json()
             }
-          }catch(err){
-            res.status(400).json({err:'could not save video'})
-          }
-       } catch(err){
-         res.status(404).json()
-       }
     }
     else{
         res.status(404).json({err:'Unauthorized'})
