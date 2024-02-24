@@ -13,6 +13,26 @@ const ffmpeg = require('fluent-ffmpeg');
 
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
+const deleteFiles = async(videos) => {
+    await Promise.all(videos.map(async(video)=>{
+        console.log(video,'mapping')
+        const deletedVideo = await Video.findOneAndDelete({_id:video})
+        if(deletedVideo){
+            const inputVid = './routes/uploads/' +  deletedVideo.videoLink.replace('mp4','avi')
+                fs.unlink(inputVid,(err)=>{
+                    if(err) console.log(err,'im')
+                    else {
+                       console.log('deleted')
+                    }
+            })
+        }
+        else{
+            console.log('error')
+        }
+    }))
+}
+
+
 const deleteVideo = async(req,res,next) => {
     try{
         const token = req.headers.authorization.split(' ')[1]
@@ -23,22 +43,7 @@ const deleteVideo = async(req,res,next) => {
             if(course.topics.includes(req.params.topicId)){
                 try{
                     console.log(req.body.videos,'dasdsadsadsa')
-                    await Promise.all(req.body.videos.map(async(video)=>{
-                        console.log(video,'mapping')
-                        const deletedVideo = await Video.findOneAndDelete({_id:video})
-                        if(deletedVideo){
-                            const inputVid = './routes/uploads/' +  deletedVideo.videoLink.replace('mp4','avi')
-                                fs.unlink(inputVid,(err)=>{
-                                    if(err) console.log(err)
-                                    else {
-                                       console.log('deleted')
-                                    }
-                            })
-                        }
-                        else{
-                            console.log('error')
-                        }
-                    }))
+                    deleteFiles(req.body.videos)
             console.log('crossing promise')
             next()
                 } catch{
@@ -337,6 +342,58 @@ const courseCompress = async(req,res,next) => {
 }
 
 
+const deleteTopic = async(req,res,next) => {
+    try{
+        const user = await User.findOne({_id:req.decoded._id})
+        try{
+           const course = await Course.findOne({_id:req.params.courseId})
+           const topic = await Topic.findOne({_id:req.params.topicId})
+           if(!user.uploadedCourses.includes(course._id) || !course.topics.includes(topic._id)) res.status(400).json({message:'Unautorized'})
+           deleteFiles(topic.videos)
+           await Topic.deleteOne({_id:req.params.topicId})
+           next()
+        } catch{
+            res.status(500).json({message:'Server failed'})
+        }
+        
+    } catch{
+        res.status(400).json({message:'Unautorized'})
+    }
+}
+const deleteCourse = async(req,res,next) => {
+    try{
+        const user = await User.findOne({_id:req.decoded._id})
+        try{
+           const course = await Course.findOne({_id:req.params.courseId})
+           if(!user.uploadedCourses.includes(course._id)) res.status(400).json({message:'Unautorized'})
+           console.log(course.topics,'submit')
+           const populatedCourse = await course.populate({
+            path:'topics',
+            model:'Topic',
+            populate:{
+                path:'videos',
+                model:'Video',
+              }
+            })
+            const nestedVideos = populatedCourse.topics.map(topic=>{
+                return topic.videos.map(video=>{
+                    return video._id
+                })
+            })
+            const [videos] = nestedVideos
+           deleteFiles(videos)
+           await Course.deleteOne({_id:req.params.courseId})
+           next()
+        } catch{
+            res.status(500).json({message:'Server failed'})
+        }
+        
+    } catch{
+        res.status(400).json({message:'Unautorized'})
+    }
+}
 
 
-module.exports = {courseUpload,courseCompress,addVideo,addTopic,deleteVideo}
+
+
+module.exports = {courseUpload,courseCompress,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse}

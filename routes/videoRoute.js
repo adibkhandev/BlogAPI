@@ -4,7 +4,7 @@ var cors = require('cors');
 const Course = require('../models/course')
 const Video = require('../models/video')
 const {tokenVerify} = require('../middlewares/token')
-const {courseUpload,courseCompress,addVideo,addTopic,deleteVideo}  = require('../middlewares/videoCourse');
+const {courseUpload,courseCompress,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse}  = require('../middlewares/videoCourse');
 const fs = require('fs')
 const path = require('path')
 var multer = require('multer');
@@ -90,6 +90,20 @@ router.post('/upload',upload.fields(
 })
 
 
+router.get('/get/small/:id',async(req,res)=>{
+  console.log(req.params.id,'param')
+     try{
+        const decoded = req.decoded
+        
+        const video = await Video.findOne({_id:req.params.id})
+        res.status(200).json({video})  
+     }
+     catch{
+        res.status(404).json({err:'Video not found'})
+     }  
+})
+
+
 router.get('/get/:id',tokenVerify,async(req,res)=>{
   console.log('token',req.headers["authorization"])
   try{
@@ -117,9 +131,19 @@ router.get('/get/:id',tokenVerify,async(req,res)=>{
 
 router.post('/delete/:courseId/:topicId',deleteVideo,(req,res)=>{
   console.log('passing next')  
-  res.status(200).json({
+  res.status(201).json({
       data:'deleted successfully'
     })
+})
+router.delete('/delete/:courseId/:topicId/topic',tokenVerify,deleteTopic,(req,res)=>{
+  res.status(201).json({
+    data:'deleted successfully'
+  })
+})
+router.delete('/delete/:courseId/course',tokenVerify,deleteCourse,(req,res)=>{
+  res.status(201).json({
+    data:'deleted successfully'
+  })
 })
 
 router.post('/get/explore',courseCompress,async(req,res)=>{
