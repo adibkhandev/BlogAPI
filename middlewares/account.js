@@ -11,7 +11,7 @@ const subscribeCourse = async(req,res,next) => {
         console.log(token)
         const userInstance = await User.findOne({_id:decoded._id})
         const courseInstance = await Course.findOne({_id:req.body.courseId})
-        if(userInstance && courseInstance){
+        if(userInstance && courseInstance && courseInstance.subscribedCount>=0){
             if(userInstance.subscribedCourses.includes(courseInstance._id)) res.status(400).json('Subscribed already')
             else try{
                 courseInstance.subscribedCount = courseInstance.subscribedCount + 1

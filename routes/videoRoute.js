@@ -4,7 +4,18 @@ var cors = require('cors');
 const Course = require('../models/course')
 const Video = require('../models/video')
 const {tokenVerify} = require('../middlewares/token')
-const {courseUpload,courseCompress,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse}  = require('../middlewares/videoCourse');
+const {
+  courseUpload,
+  courseCompress,
+  addVideo,
+  addTopic,
+  deleteVideo,
+  deleteTopic,
+  deleteCourse,
+  updateVideo,
+  updateTopic,
+  updateCourse
+  }  = require('../middlewares/videoCourse');
 const fs = require('fs')
 const path = require('path')
 var multer = require('multer');
@@ -128,7 +139,23 @@ router.get('/get/:id',tokenVerify,async(req,res)=>{
     res.status(400).json({err:err})  
   }
 })
+//update
 
+router.post('/update/:courseId/:topicId/:videoId/video',tokenVerify,upload.single('videoFile'),updateVideo,(req,res)=>{
+   res.status(201).json({data:'Updated Successfully'})
+})
+router.post('/update/:courseId/:topicId/topic',tokenVerify,updateTopic,(req,res)=>{
+  res.status(201).json({data:'Updated Successfully'})
+})
+router.post('/update/:courseId/course',tokenVerify,upload.single('courseImage'),updateCourse,(req,res)=>{
+  res.status(201).json({data:'Updated Successfully'})
+})
+
+
+
+
+
+//delete
 router.post('/delete/:courseId/:topicId',deleteVideo,(req,res)=>{
   console.log('passing next')  
   res.status(201).json({

@@ -10,6 +10,7 @@ const dotenv = require('dotenv');
 dotenv.config()
 const ffmpegStatic = require('ffmpeg-static');
 const ffmpeg = require('fluent-ffmpeg');
+const video = require('../models/video')
 
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
@@ -342,6 +343,142 @@ const courseCompress = async(req,res,next) => {
 }
 
 
+//update
+
+const updateCourse = async(req,res,next)=>{
+    try{
+        const course = await Course.findOne({_id:req.params.courseId})
+        const user = await User.findOne({_id:req.decoded._id})
+        if(user.uploadedCourses.includes(course._id)){
+            if(req.body.courseTitle || req.body.courseDescription || req.file.filename){
+                if(req.body.courseTitle){
+                    course.title = req.body.courseTitle
+                }
+                if(req.body.courseDescription){
+                    course.description = req.body.courseDescription
+                }
+                if(req.file){
+                    const lastCover = './routes/uploads' + course.coverPhotoLink
+                    course.coverPhotoLink = '/images/' + req.file.filename
+                    fs.unlink(lastCover,(err)=>{
+                        if(err) console.log(err)
+                        else{
+                    }
+            })
+                }
+                console.log('finifn')
+                await course.save()
+                next()
+            }
+            else{
+              res.status(400).json({err:'Empty request'})
+            }
+        }
+        else{
+            res.status(400).json({err:'Unauthorized'})
+        }
+    } 
+    catch{
+       res.status(500).json({err:'Server failed'})
+    }
+}
+
+
+const updateVideo = async(req,res,next) => {
+    try{
+        console.log(req.params.courseId,req.params.topicId,'sad')
+        const course = await Course.findOne({_id:req.params.courseId})
+        const topic = await Topic.findOne({_id:req.params.topicId})
+        const user = await User.findOne({_id:req.decoded._id})
+        const video = await Video.findOne({_id:req.params.videoId})
+        if(user.uploadedCourses.includes(course._id) && course.topics.includes(topic._id) && topic.videos.includes(video._id)){
+            if(req.body.videoTitle || req.body.videoDescription || req.file.filename){
+                if(req.body.videoTitle){
+                    video.title = req.body.videoTitle
+                }
+                if(req.body.videoDescription){
+                    video.description = req.body.videoDescription
+                }
+                if(req.file){
+                    try {
+                        const lastVideo = video.videoLink
+                        const inputVid = './routes/uploads/videos/' + req.file.filename
+                        const outputVid = './routes/uploads/videos/' + req.file.filename.replace('mp4','avi')
+                        const oldVid = './routes/uploads/' + lastVideo.replace('mp4','avi')
+                        ffmpeg(inputVid)
+                        .format('avi')
+                        .on('error', (err) =>{
+                            res.status(500).json({err:'Server failed in saving video'})
+                        })
+                        .on('end', () =>{
+                            fs.unlink(inputVid,(err)=>{
+                                if(err) console.log(err)
+                                else console.log('deleted')
+                            })
+                            console.log('Conversion done!')
+                            fs.unlink(oldVid,(err)=>{
+                                if(err) console.log(err)
+                                else{
+                            console.log('deleted')
+                        } 
+                    })
+                })
+                .save(outputVid, { end: true })
+                video.videoLink = '/videos/' + req.file.filename
+                
+            } catch{
+                        console.log('error in ffmpeg')
+                    }
+                }
+                console.log('finifn')
+                await video.save()
+                next()
+            }
+            else{
+              res.status(400).json({err:'Empty request'})
+            }
+        }
+        else{
+            res.status(400).json({err:'Unauthorized'})
+        }
+    } 
+    catch{
+       res.status(500).json({err:'Server failed'})
+    }
+}
+
+
+const updateTopic = async(req,res,next) => {
+    // console.log(req.params,req.decoded)
+    try{
+        const course = await Course.findOne({_id:req.params.courseId})
+        const topic = await Topic.findOne({_id:req.params.topicId})
+        const user = await User.findOne({_id:req.decoded._id})
+        console.log(course._id,topic._id,user._id)
+        if(user.uploadedCourses.includes(course._id) && course.topics.includes(topic._id)){
+            if(req.body.topicTitle){
+                console.log('ashe')
+                topic.title = req.body.topicTitle
+                await topic.save()
+                next()
+            }
+            else{
+              res.status(400).json({err:'Empty request'})
+            }
+        }
+        else{
+            res.status(400).json({err:'Unauthorized'})
+        }
+    } 
+    catch{
+       res.status(500).json({err:'Server failed'})
+    }
+}
+
+
+//delete
+
+
 const deleteTopic = async(req,res,next) => {
     try{
         const user = await User.findOne({_id:req.decoded._id})
@@ -382,6 +519,13 @@ const deleteCourse = async(req,res,next) => {
             })
             const [videos] = nestedVideos
            deleteFiles(videos)
+           fs.unlink(__dirname + './../routes/uploads' + course.coverPhotoLink, (err) => {
+            if (err) {
+                console.log("failed to delete local image:"+err);
+            } else {
+                console.log('successfully deleted local image');                                
+            }
+            });
            await Course.deleteOne({_id:req.params.courseId})
            next()
         } catch{
@@ -396,4 +540,4 @@ const deleteCourse = async(req,res,next) => {
 
 
 
-module.exports = {courseUpload,courseCompress,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse}
+module.exports = {courseUpload,courseCompress,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse,updateVideo,updateTopic,updateCourse}
