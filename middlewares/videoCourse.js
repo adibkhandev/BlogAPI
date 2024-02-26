@@ -366,7 +366,6 @@ const updateCourse = async(req,res,next)=>{
                     }
             })
                 }
-                console.log('finifn')
                 await course.save()
                 next()
             }
