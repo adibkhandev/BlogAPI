@@ -20,6 +20,10 @@ const videoSchema = new mongoose.Schema({
     videoLink:{
         type:String,
         required:true,
+    },
+    thumbnailLink:{
+        type:String,
+        required:true,
     }
 }, {
     timestamps: true

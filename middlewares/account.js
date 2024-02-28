@@ -63,4 +63,16 @@ const unSubscribeCourse = async(req,res,next) => {
 
 }
 
-module.exports = {subscribeCourse,unSubscribeCourse}
+const getSubscribed = async(req,res,next) => {
+    console.log(req.decoded._id)
+    try{
+        const userInstance = await User.findOne({_id:req.decoded._id})
+        req.subscribed = userInstance.subscribedCourses
+        next()
+    } catch{
+        res.status(500).json('Server failed')
+    }
+}
+
+
+module.exports = {subscribeCourse,unSubscribeCourse,getSubscribed}

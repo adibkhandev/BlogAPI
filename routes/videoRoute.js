@@ -14,7 +14,8 @@ const {
   deleteCourse,
   updateVideo,
   updateTopic,
-  updateCourse
+  updateCourse,
+  courseCompressSingle
   }  = require('../middlewares/videoCourse');
 const fs = require('fs')
 const path = require('path')
@@ -177,6 +178,11 @@ router.post('/get/explore',courseCompress,async(req,res)=>{
    res.status(200).json({
       data:req.courses
    })
+})
+router.get('/get/:courseId/compress',courseCompressSingle,async(req,res)=>{
+  res.status(200).json({
+     data:req.course
+  })
 })
 
 

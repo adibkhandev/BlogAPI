@@ -16,19 +16,27 @@ ffmpeg.setFfmpegPath(ffmpegStatic);
 
 const deleteFiles = async(videos) => {
     await Promise.all(videos.map(async(video)=>{
-        console.log(video,'mapping')
+//        console.log(video,'mapping')
         const deletedVideo = await Video.findOneAndDelete({_id:video})
         if(deletedVideo){
             const inputVid = './routes/uploads/' +  deletedVideo.videoLink.replace('mp4','avi')
+            const thumbnail = './routes/uploads/' +  deletedVideo.thumbnailLink
                 fs.unlink(inputVid,(err)=>{
-                    if(err) console.log(err,'im')
+                   if(err) console.log(err,'im')
                     else {
-                       console.log('deleted')
+//                       console.log('deleted')
                     }
-            })
+                })
+                fs.unlink(thumbnail,(err)=>{
+                    if(err) console.log(err,'im')
+                     else {
+ //                       console.log('deleted')
+                     }
+                 })
+                
         }
         else{
-            console.log('error')
+//            console.log('error')
         }
     }))
 }
@@ -43,9 +51,9 @@ const deleteVideo = async(req,res,next) => {
             const course = await Course.findOne({_id:req.params.courseId})
             if(course.topics.includes(req.params.topicId)){
                 try{
-                    console.log(req.body.videos,'dasdsadsadsa')
+//                    console.log(req.body.videos,'dasdsadsadsa')
                     deleteFiles(req.body.videos)
-            console.log('crossing promise')
+//            console.log('crossing promise')
             next()
                 } catch{
                     res.status(400).json({err:'could not map'})
@@ -63,13 +71,13 @@ const deleteVideo = async(req,res,next) => {
 }
 
 const courseUpload = async(req,res,next) => {
-    // console.log(req.files,'files',req.body,path.extname(req.files.coverPhoto[0].originalname))
+//    // console.log(req.files,'files',req.body,path.extname(req.files.coverPhoto[0].originalname))
     
     
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
-    // console.log(decoded,'decoded')
-    // console.log(req.body.skills,'skills')
+//    // console.log(decoded,'decoded')
+//    // console.log(req.body.skills,'skills')
     if(decoded){
         try{
             const userInstance = await User.findOne({_id:decoded._id})
@@ -81,14 +89,26 @@ const courseUpload = async(req,res,next) => {
                     .format('avi')
                     .on('error', (err) => console.error('Error:', err))
                     .on('end', () =>{
-                        console.log('Conversion done!')
+//                        console.log('Conversion done!')
                         fs.unlink(inputVid,(err)=>{
-                            console.log(err)
+//                            console.log(err)
                         })
+                    })
+                    .screenshot({
+                        timestamps: ['00:00:03'],
+                        filename: `screenshot-${req.files.videoFile[0].filename.replace('mp4','png')}`,
+                        folder: './routes/uploads/images',
+                    })
+                    .on('end',()=> {
+                       console.log('screenshots')
+                    })
+                    .on('error',(error)=>{
+                       console.log(error)
+
                     })
                     .save(outputVid, { end: true })
             } catch{
-                 console.log('error in ffmpeg')
+//                 console.log('error in ffmpeg')
             }
             
             try{
@@ -97,6 +117,7 @@ const courseUpload = async(req,res,next) => {
                     title:req.body.title,
                     description:req.body.description,
                     videoLink:'/videos/' + req.files.videoFile[0].filename,
+                    thumbnailLink:'/images/' + `screenshot-${req.files.videoFile[0].filename.replace('mp4','png')}`,
                     uploadedBy:decoded._id
                 })
                 const videoSaved = await newVideo.save()
@@ -135,7 +156,7 @@ const courseUpload = async(req,res,next) => {
                                                         model:'Video',
                                                     }
                                                 })
-                                                console.log(populatedCourse,'populate')
+//                                                console.log(populatedCourse,'populate')
                                                 req.course = populatedCourse
                                                 next()
                                             }catch(err){
@@ -185,16 +206,16 @@ const courseUpload = async(req,res,next) => {
 const addVideo = async(req,res,next) => {
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
-    console.log(req.body)
+//    console.log(req.body)
     if(decoded){
        try{
         const course = await Course.findOne({_id:req.body.id},{topics:{$slice: -1}})
-        console.log(course.topics[0])
+//        console.log(course.topics[0])
         const topic = await Topic.findOne({_id:req.body.topicId},{videos:{$slice: -1}})
         const LastVideo = await Video.findOne({_id:topic.videos[0]})
-        console.log(LastVideo,'last')
+//        console.log(LastVideo,'last')
         const newNum =LastVideo ? LastVideo.number + 0.01: topic.number + 0.01;
-        console.log(newNum)
+//        console.log(newNum)
         try {
             const inputVid = './routes/uploads/videos/' + req.file.filename
             const outputVid = './routes/uploads/videos/' + req.file.filename.replace('mp4','avi')
@@ -202,26 +223,39 @@ const addVideo = async(req,res,next) => {
             .format('avi')
             .on('error', (err) => console.error('Error:', err))
             .on('end', () =>{
-                console.log('Conversion done!')
+//                console.log('Conversion done!')
                 fs.unlink(inputVid,(err)=>{
-                    console.log(err)
+//                    console.log(err)
                 })
+            })
+            .screenshot({
+                timestamps: ['00:00:03'],
+                filename: `screenshot-${req.file.filename.replace('mp4','png')}`,
+                folder: './routes/uploads/images',
+            })
+            .on('end',()=> {
+               console.log('screenshots')
+            })
+            .on('error',(error)=>{
+               console.log(error)
+
             })
             .save(outputVid, { end: true })
         } catch{
-                console.log('error in ffmpeg')
+//                console.log('error in ffmpeg')
         }
         const newVideo = new Video({
             number:newNum,
             title:req.body.title,
             description:req.body.description,
             videoLink:'/videos/' + req.file.filename,
+            thumbnailLink:'/images/' + `screenshot-${req.file.filename.replace('mp4','png')}`,
             uploadedBy:decoded._id,
         })
-        console.log(newVideo,'mew')
+//        console.log(newVideo,'mew')
         const videoSaved = await newVideo.save()
         course.videoNumber += 1
-        console.log(topic,'topic to be added',videoSaved._id)
+//        console.log(topic,'topic to be added',videoSaved._id)
         
         const topicSaved = await Topic.updateOne(
             {_id:topic._id},
@@ -257,7 +291,7 @@ const addVideo = async(req,res,next) => {
 const addTopic = async(req,res,next) => {
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
-    console.log(decoded,'deded')
+//    console.log(decoded,'deded')
     if(decoded){
         try{
           const course = await Course.findOne({_id:req.body.id},{topics:{$slice: -1}})
@@ -269,6 +303,7 @@ const addTopic = async(req,res,next) => {
                 description:req.body.description,
                 videoLink:'/videos/' + req.file.filename,
                 uploadedBy:decoded._id,
+                thumbnailLink:'/images/' + `screenshot-${req.file.filename.replace('mp4','png')}`,
             })
             const videoSaved = await newVideo.save()
             try {
@@ -278,14 +313,26 @@ const addTopic = async(req,res,next) => {
                 .format('avi')
                 .on('error', (err) => console.error('Error:', err))
                 .on('end', () =>{
-                    console.log('Conversion done!')
+//                    console.log('Conversion done!')
                     fs.unlink(inputVid,(err)=>{
-                        console.log(err)
+//                        console.log(err)
                     })
+                })
+                .screenshot({
+                    timestamps: ['00:00:03'],
+                    filename: `screenshot-${req.file.filename.replace('mp4','png')}`,
+                    folder: './routes/uploads/images',
+                })
+                .on('end',()=> {
+                   console.log('screenshots')
+                })
+                .on('error',(error)=>{
+                   console.log(error)
+
                 })
                 .save(outputVid, { end: true })
             } catch{
-                    console.log('error in ffmpeg')
+//                    console.log('error in ffmpeg')
             }
             course.videoNumber += 1
                 const newTopic = new Topic({
@@ -334,8 +381,30 @@ const courseCompress = async(req,res,next) => {
                 uploaderPicture:author.pfp,
             }
         }))
-        console.log(compressedCourses,'com')
+//        console.log(compressedCourses,'com')
         req.courses = compressedCourses
+        next()
+    } catch(err){
+        res.status(404).json({err:err})
+    }
+}
+const courseCompressSingle = async(req,res,next) => {
+    // const token = req.headers.authorization.split(' ')[1]
+    // const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
+    try{
+        const course = await Course.findOne({_id:req.params.courseId})
+//        console.log('ashe')
+        const author = await User.findOne({_id:course.uploadedBy})
+        const compressedCourse =  {
+                courseId:course._id,
+                userId:author._id,
+                courseName:course.title,
+                cover:course.coverPhotoLink,
+                videos:course.videoNumber,
+                uploaderName:author.username,
+                uploaderPicture:author.pfp,
+        }
+        req.course = compressedCourse
         next()
     } catch(err){
         res.status(404).json({err:err})
@@ -361,7 +430,7 @@ const updateCourse = async(req,res,next)=>{
                     const lastCover = './routes/uploads' + course.coverPhotoLink
                     course.coverPhotoLink = '/images/' + req.file.filename
                     fs.unlink(lastCover,(err)=>{
-                        if(err) console.log(err)
+                       if(err) console.log(err)
                         else{
                     }
             })
@@ -385,7 +454,7 @@ const updateCourse = async(req,res,next)=>{
 
 const updateVideo = async(req,res,next) => {
     try{
-        console.log(req.params.courseId,req.params.topicId,'sad')
+//        console.log(req.params.courseId,req.params.topicId,'sad')
         const course = await Course.findOne({_id:req.params.courseId})
         const topic = await Topic.findOne({_id:req.params.topicId})
         const user = await User.findOne({_id:req.decoded._id})
@@ -404,32 +473,52 @@ const updateVideo = async(req,res,next) => {
                         const inputVid = './routes/uploads/videos/' + req.file.filename
                         const outputVid = './routes/uploads/videos/' + req.file.filename.replace('mp4','avi')
                         const oldVid = './routes/uploads/' + lastVideo.replace('mp4','avi')
+                        console.log('ending')
                         ffmpeg(inputVid)
                         .format('avi')
                         .on('error', (err) =>{
                             res.status(500).json({err:'Server failed in saving video'})
                         })
                         .on('end', () =>{
+                            
+                        })
+                        .screenshot({
+                            timestamps: ['00:00:03'],
+                            filename: `screenshot-${req.file.filename.replace('mp4','png')}`,
+                            folder: './routes/uploads/images',
+                        })
+                        .on('end',()=> {
                             fs.unlink(inputVid,(err)=>{
-                                if(err) console.log(err)
+                            if(err) console.log(err)
                                 else console.log('deleted')
                             })
-                            console.log('Conversion done!')
+        //                            console.log('Conversion done!')
                             fs.unlink(oldVid,(err)=>{
-                                if(err) console.log(err)
+                            if(err) console.log(err)
                                 else{
-                            console.log('deleted')
-                        } 
-                    })
-                })
-                .save(outputVid, { end: true })
-                video.videoLink = '/videos/' + req.file.filename
+        //                            console.log('deleted')
+                                }
+                            }) 
+                            fs.unlink('./routes/uploads/' + video.thumbnailLink,err=>{
+                                if(err) console.log(err)
+                                else console.log('screenshots')
+                            })
+                            console.log(video.videoLink,'link')
+                        
+                            })
+                            .on('error',(error)=>{
+                            console.log(error)
+
+                            })
+                            .save(outputVid, { end: true })
+                            video.thumbnailLink = '/images/' + `screenshot-${req.file.filename.replace('mp4','png')}`,
+                            video.videoLink = '/videos/' + req.file.filename
                 
             } catch{
-                        console.log('error in ffmpeg')
+//                        console.log('error in ffmpeg')
                     }
                 }
-                console.log('finifn')
+//                console.log('finifn')
                 await video.save()
                 next()
             }
@@ -448,15 +537,15 @@ const updateVideo = async(req,res,next) => {
 
 
 const updateTopic = async(req,res,next) => {
-    // console.log(req.params,req.decoded)
+//    // console.log(req.params,req.decoded)
     try{
         const course = await Course.findOne({_id:req.params.courseId})
         const topic = await Topic.findOne({_id:req.params.topicId})
         const user = await User.findOne({_id:req.decoded._id})
-        console.log(course._id,topic._id,user._id)
+//        console.log(course._id,topic._id,user._id)
         if(user.uploadedCourses.includes(course._id) && course.topics.includes(topic._id)){
             if(req.body.topicTitle){
-                console.log('ashe')
+//                console.log('ashe')
                 topic.title = req.body.topicTitle
                 await topic.save()
                 next()
@@ -502,7 +591,7 @@ const deleteCourse = async(req,res,next) => {
         try{
            const course = await Course.findOne({_id:req.params.courseId})
            if(!user.uploadedCourses.includes(course._id)) res.status(400).json({message:'Unautorized'})
-           console.log(course.topics,'submit')
+//           console.log(course.topics,'submit')
            const populatedCourse = await course.populate({
             path:'topics',
             model:'Topic',
@@ -520,9 +609,9 @@ const deleteCourse = async(req,res,next) => {
            deleteFiles(videos)
            fs.unlink(__dirname + './../routes/uploads' + course.coverPhotoLink, (err) => {
             if (err) {
-                console.log("failed to delete local image:"+err);
+//                console.log("failed to delete local image:"+err);
             } else {
-                console.log('successfully deleted local image');                                
+//                console.log('successfully deleted local image');                                
             }
             });
            await Course.deleteOne({_id:req.params.courseId})
@@ -539,4 +628,4 @@ const deleteCourse = async(req,res,next) => {
 
 
 
-module.exports = {courseUpload,courseCompress,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse,updateVideo,updateTopic,updateCourse}
+module.exports = {courseUpload,courseCompress,courseCompressSingle,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse,updateVideo,updateTopic,updateCourse}

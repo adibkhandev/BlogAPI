@@ -2,7 +2,8 @@ const express = require('express')
 const router = express.Router()
 const cors = require('cors');
 const User = require('../models/user')
-const {subscribeCourse,unSubscribeCourse} = require('../middlewares/account')
+const {tokenVerify} = require('../middlewares/token')
+const {subscribeCourse,unSubscribeCourse,getSubscribed} = require('../middlewares/account')
 router.use(cors()) 
 
 router.post('/subscribe',subscribeCourse,(req,res)=>{
@@ -11,6 +12,12 @@ router.post('/subscribe',subscribeCourse,(req,res)=>{
     })
 })
 
+
+router.get('/subscribed',tokenVerify,getSubscribed,(req,res)=>{
+    res.status(200).json({
+        subscribed:req.subscribed
+    })
+})
 
 router.post('/unsubscribe',unSubscribeCourse,(req,res)=>{
     res.json({
