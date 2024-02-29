@@ -473,6 +473,7 @@ const updateVideo = async(req,res,next) => {
                         const inputVid = './routes/uploads/videos/' + req.file.filename
                         const outputVid = './routes/uploads/videos/' + req.file.filename.replace('mp4','avi')
                         const oldVid = './routes/uploads/' + lastVideo.replace('mp4','avi')
+                        const oldThumbNail = './routes/uploads/' + video.thumbnailLink
                         console.log('ending')
                         ffmpeg(inputVid)
                         .format('avi')
@@ -499,7 +500,7 @@ const updateVideo = async(req,res,next) => {
         //                            console.log('deleted')
                                 }
                             }) 
-                            fs.unlink('./routes/uploads/' + video.thumbnailLink,err=>{
+                            fs.unlink(oldThumbNail,err=>{
                                 if(err) console.log(err)
                                 else console.log('screenshots')
                             })

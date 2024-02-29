@@ -30,18 +30,20 @@ router.get('/:username',async(req,res)=>{
     try{
       const UserFound = await User.findOne({username:req.params.username})
       const populatedUser = await UserFound.populate({
-        path:'uploadedCourses subscribedCourses',
-        model:'Course',
-        populate:{
-            path:'topics',
-            model:'Topic',
-            populate:{
-                path:'videos',
-                model:'Video',
+          path:'uploadedCourses subscribedCourses',
+          model:'Course',
+          populate:{
+              path:'topics',
+              model:'Topic',
+              populate:{
+                  path:'videos',
+                  model:'Video',
+                }
             }
-        }
-    }) 
-      console.log(populatedUser,'pop')
+        }) 
+        console.log('pop')
+        const landingUserUploaded = populatedUser.uploadedCourses.length ? populatedUser.uploadedCourses.reverse() : null
+        const landingUserSubscribed = populatedUser.subscribedCourses.length ? populatedUser.subscribedCourses.reverse() : null
       res
         .status(200)
         .json({
@@ -50,10 +52,9 @@ router.get('/:username',async(req,res)=>{
             skills:populatedUser.skills,
             pfp:populatedUser.pfp,
             userType:populatedUser.userType,
-            uploadedCourses:populatedUser?populatedUser.uploadedCourses:null,
-            subscribedCourses:populatedUser?populatedUser.subscribedCourses:null,
-            thumbnails:populatedUser.uploadedCourses.map(courses=>courses.coverPhotoLink)
-
+            uploadedCourses:landingUserUploaded,
+            subscribedCourses:landingUserSubscribed,
+            thumbnails:landingUserUploaded ? landingUserUploaded.map(courses=>courses.coverPhotoLink):null
         })
   
     } catch(err){
