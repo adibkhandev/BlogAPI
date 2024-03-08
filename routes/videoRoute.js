@@ -33,12 +33,10 @@ var fileStorage = multer.diskStorage({
        else{
            cb(null, path.join( __dirname,'uploads/images'))
        }
-       
    },
    filename:(req,file,cb) => {
       cb(null, file.fieldname+"-"+uuidv4()+path.extname(file.originalname));
    }
-
 });
 
 var upload = multer(
@@ -102,12 +100,15 @@ router.post('/upload',upload.fields(
 })
 
 
+//getters
+
 router.get('/get/small/:id',async(req,res)=>{
   console.log(req.params.id,'param')
      try{
         const decoded = req.decoded
-        
         const video = await Video.findOne({_id:req.params.id})
+        const range = req.headers.range;
+        if(range) console.log(range)
         res.status(200).json({video})  
      }
      catch{
@@ -174,6 +175,8 @@ router.delete('/delete/:courseId/course',tokenVerify,deleteCourse,(req,res)=>{
   })
 })
 
+
+//compressed getters
 router.post('/get/explore',courseCompress,async(req,res)=>{
    res.status(200).json({
       data:req.courses
