@@ -56,6 +56,7 @@ router.post('/refresh',tokenRefresh,(req,res)=>{
     .json({
       accesstoken:req.token,
       refreshtoken:req.refreshToken,
+      userData:req.user
     })
 })
 router.get('/refresh/all',async(req,res)=>{

@@ -179,18 +179,27 @@ const tokenRefresh = async(req,res,next) => {
     if(req.body.refreshToken){
         try{
                 const decoded = jwt.verify(req.body.refreshToken, process.env.SECRET_RTOKEN)
-                console.log(decoded,'korse')  
-                if(decoded){
-                      console.log('verified :',decoded)
-                      const token = generateAccessToken(decoded.username,decoded.password,decoded._id)
-                      req.token = token
-                      const refreshToken = generateRefreshToken(decoded.username,decoded.password,decoded._id)
-                      req.refreshToken = refreshToken
-                      return next()
-                  }
-                  else{
-                    res.status(500).json({'error':'token not verified'})
-                  }
+                console.log(decoded,'korse')
+                console.log('verified :',decoded)
+                const user = User.findOne({_id:decoded._id})
+                const populatedUser = await user.populate({
+                    path:'uploadedCourses subscribedCourses',
+                    model:'Course',
+                    populate:{
+                        path:'topics',
+                        model:'Topic',
+                        populate:{
+                            path:'videos',
+                            model:'Video',
+                            }
+                        }
+                    }) 
+                req.user = populatedUser
+                const token = generateAccessToken(decoded.username,decoded.password,decoded._id)
+                req.token = token
+                const refreshToken = generateRefreshToken(decoded.username,decoded.password,decoded._id)
+                req.refreshToken = refreshToken
+                return next()
         } catch(err){
             res.status(400).json({'message':'token not recognized'})
         }
