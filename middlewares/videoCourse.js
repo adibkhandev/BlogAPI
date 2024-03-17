@@ -107,6 +107,7 @@ const courseUpload = async(req,res,next) => {
 
                     })
                     .save(outputVid, { end: true })
+                    
             } catch{
 //                 console.log('error in ffmpeg')
             }

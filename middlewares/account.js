@@ -17,9 +17,9 @@ const subscribeCourse = async(req,res,next) => {
                 try{
                     courseInstance.subscribedCount = courseInstance.subscribedCount + 1
                     userInstance.subscribedCourses.push(courseInstance._id)
-                    await userInstance.save()
+                    const savedUser = await userInstance.save()
                     await courseInstance.save()
-                    const populatedUser = await userInstance.populate({
+                    const populatedUser = await savedUser.populate({
                         path:'uploadedCourses subscribedCourses',
                         model:'Course',
                         populate:{
@@ -49,23 +49,23 @@ const subscribeCourse = async(req,res,next) => {
 }
 
 const unSubscribeCourse = async(req,res,next) => {
-    console.log('rwx')
+    // console.log('rwx')
     try{
         const token = req.headers.authorization.split(' ')[1]
         const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
-        console.log(token)
+        // console.log(token)
         const userInstance = await User.findOne({_id:decoded._id})
         const courseInstance = await Course.findOne({_id:req.body.courseId})
         if(userInstance && courseInstance){
-            console.log(courseInstance.subscribedCount,'cpint')
-            if(!userInstance.subscribedCourses.includes(courseInstance._id) || !courseInstance.subscribedCount>0) res.status(400).json('Nai already')
+            // console.log(courseInstance.subscribedCount,'cpint')
+            if(!userInstance.subscribedCourses.includes(courseInstance._id) || courseInstance.subscribedCount<1) res.status(400).json('Nai already')
             else{
                 try{
                     courseInstance.subscribedCount = courseInstance.subscribedCount - 1
                     userInstance.subscribedCourses.pop(courseInstance._id)
                     await courseInstance.save()
-                    await userInstance.save()
-                    const populatedUser = await userInstance.populate({
+                    const savedUser = await userInstance.save()
+                    const populatedUser = await savedUser.populate({
                         path:'uploadedCourses subscribedCourses',
                         model:'Course',
                         populate:{
@@ -78,7 +78,8 @@ const unSubscribeCourse = async(req,res,next) => {
                             }
                     }) 
                     console.log(populatedUser)
-                    req.updatedUser = populatedUser 
+                    req.updatedUser = populatedUser
+                    console.log('unsub - ',courseInstance._id) 
                     next()
                 } catch {
                     res.status(405).json({err:"Couldn't update user"})
@@ -98,7 +99,7 @@ const getSubscribed = async(req,res,next) => {
     console.log(req.decoded._id)
     try{
         const userInstance = await User.findOne({_id:req.decoded._id})
-        req.subscribed = userInstance.subscribedCourses
+        req.subscribed = userInstance.subscribedCourses.reverse()
         next()
     } catch{
         res.status(500).json('Server failed')
