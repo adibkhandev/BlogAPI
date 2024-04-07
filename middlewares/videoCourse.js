@@ -365,24 +365,35 @@ const addTopic = async(req,res,next) => {
 }
 
 
+const compress = async(courses,userId) => {
+    // console.log(courses,'getting')
+    return await Promise.all(courses.map(async(course)=>{
+        const author = await User.findOne({_id:course.uploadedBy})
+        // console.log(author,'gets')
+        return {
+            courseId:course._id,
+            userId:author?author._id:null,
+            courseName:course.title,
+            cover:course.coverPhotoLink,
+            videos:course.videoNumber,
+            uploaderName:author?author.username:'unknown',
+            uploaderPicture:author?author.pfp:null,
+        }
+    }))
+}
+
+
 const courseCompress = async(req,res,next) => {
     // const token = req.headers.authorization.split(' ')[1]
     // const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
     try{
         const courses = await Course.find({skills:req.body.skill})
-        const compressedCourses =  await Promise.all(courses.map(async(course)=>{
-            const author = await User.findOne({_id:course.uploadedBy})
-            return {
-                courseId:course._id,
-                userId:author._id,
-                courseName:course.title,
-                cover:course.coverPhotoLink,
-                videos:course.videoNumber,
-                uploaderName:author.username,
-                uploaderPicture:author.pfp,
-            }
-        }))
+        const mostViewedCourses = await Course.find().sort({subscribedCount: -1})
+        const compressedCourses = await compress(courses)
+        const compressedMostViewedCourses = await compress(mostViewedCourses)
+        console.log(compressedMostViewedCourses,'most')
 //        console.log(compressedCourses,'com')
+        req.mostViewedCourses = compressedMostViewedCourses
         req.courses = compressedCourses
         next()
     } catch(err){
@@ -419,13 +430,18 @@ const updateCourse = async(req,res,next)=>{
     try{
         const course = await Course.findOne({_id:req.params.courseId})
         const user = await User.findOne({_id:req.decoded._id})
+        console.log(req.body,'s')
         if(user.uploadedCourses.includes(course._id)){
-            if(req.body.courseTitle || req.body.courseDescription || req.file.filename){
+            console.log(JSON.parse(req.body.skills),'s')
+            if(req.body.courseTitle || req.body.courseDescription || req.file || req.body.skills.length){
                 if(req.body.courseTitle){
                     course.title = req.body.courseTitle
                 }
                 if(req.body.courseDescription){
                     course.description = req.body.courseDescription
+                }
+                if(req.body.skills.length){
+                   course.skills = JSON.parse(req.body.skills)
                 }
                 if(req.file){
                     const lastCover = './routes/uploads' + course.coverPhotoLink
@@ -434,7 +450,7 @@ const updateCourse = async(req,res,next)=>{
                        if(err) console.log(err)
                         else{
                     }
-            })
+                  })
                 }
                 await course.save()
                 next()
@@ -447,8 +463,8 @@ const updateCourse = async(req,res,next)=>{
             res.status(400).json({err:'Unauthorized'})
         }
     } 
-    catch{
-       res.status(500).json({err:'Server failed'})
+    catch(err){
+       res.status(500).json({err:err.message})
     }
 }
 
@@ -461,7 +477,7 @@ const updateVideo = async(req,res,next) => {
         const user = await User.findOne({_id:req.decoded._id})
         const video = await Video.findOne({_id:req.params.videoId})
         if(user.uploadedCourses.includes(course._id) && course.topics.includes(topic._id) && topic.videos.includes(video._id)){
-            if(req.body.videoTitle || req.body.videoDescription || req.file.filename){
+            if(req.body.videoTitle || req.body.videoDescription || req.file){
                 if(req.body.videoTitle){
                     video.title = req.body.videoTitle
                 }

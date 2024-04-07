@@ -179,7 +179,10 @@ router.delete('/delete/:courseId/course',tokenVerify,deleteCourse,(req,res)=>{
 //compressed getters
 router.post('/get/explore',courseCompress,async(req,res)=>{
    res.status(200).json({
-      data:req.courses
+    data:{
+      skillCourses:req.courses,
+      mostViewedCourses:req.mostViewedCourses
+    }
    })
 })
 router.get('/get/:courseId/compress',courseCompressSingle,async(req,res)=>{
