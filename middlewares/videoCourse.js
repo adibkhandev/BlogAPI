@@ -433,17 +433,17 @@ const updateCourse = async(req,res,next)=>{
         console.log(req.body,'s')
         if(user.uploadedCourses.includes(course._id)){
             console.log(JSON.parse(req.body.skills),'s')
-            if(req.body.courseTitle || req.body.courseDescription || req.file || req.body.skills.length){
+            if(req.body.courseTitle || req.body.courseDescription || req.file || req.body.skills){
                 if(req.body.courseTitle){
                     course.title = req.body.courseTitle
                 }
                 if(req.body.courseDescription){
                     course.description = req.body.courseDescription
                 }
-                if(req.body.skills.length){
+                if(req.body.skills){
                    course.skills = JSON.parse(req.body.skills)
                 }
-                if(req.file){
+                if(req.file && req.file.filename){
                     const lastCover = './routes/uploads' + course.coverPhotoLink
                     course.coverPhotoLink = '/images/' + req.file.filename
                     fs.unlink(lastCover,(err)=>{
@@ -618,13 +618,21 @@ const deleteCourse = async(req,res,next) => {
                 model:'Video',
               }
             })
-            const nestedVideos = populatedCourse.topics.map(topic=>{
-                return topic.videos.map(video=>{
-                    return video._id
+
+            console.log('popu courses',populatedCourse)
+            if(populatedCourse.topics && populatedCourse.topics.length){
+                const nestedVideos = populatedCourse.topics.map(topic=>{
+                    return topic.videos.map(video=>{
+                        return video._id
+                    })
                 })
-            })
-            const [videos] = nestedVideos
-           deleteFiles(videos)
+                const [videos] = nestedVideos
+                deleteFiles(videos)
+                await Promise.all(populatedCourse.topics.map(async(topic)=>{
+                    await Topic.findOneAndDelete({_id:topic._id})
+                }))
+
+            }
            fs.unlink(__dirname + './../routes/uploads' + course.coverPhotoLink, (err) => {
             if (err) {
 //                console.log("failed to delete local image:"+err);
@@ -632,6 +640,7 @@ const deleteCourse = async(req,res,next) => {
 //                console.log('successfully deleted local image');                                
             }
             });
+          
            await Course.deleteOne({_id:req.params.courseId})
            next()
         } catch{
