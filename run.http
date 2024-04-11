@@ -24,3 +24,9 @@ content-type: application/json
 {
     "skill": "Hoe"
 }
+
+
+
+###
+
+GET http://127.0.0.1:3000/video/explore/course/new?start=0&end=10

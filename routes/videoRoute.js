@@ -6,7 +6,6 @@ const Video = require('../models/video')
 const {tokenVerify} = require('../middlewares/token')
 const {
   courseUpload,
-  courseCompress,
   addVideo,
   addTopic,
   deleteVideo,
@@ -15,7 +14,10 @@ const {
   updateVideo,
   updateTopic,
   updateCourse,
-  courseCompressSingle
+  courseCompressSingle,
+  skillFinder,
+  mostViewedFinder,
+  recentFinder,
   }  = require('../middlewares/videoCourse');
 const fs = require('fs')
 const path = require('path')
@@ -177,14 +179,49 @@ router.delete('/delete/:courseId/course',tokenVerify,deleteCourse,(req,res)=>{
 
 
 //compressed getters
-router.post('/get/explore',courseCompress,async(req,res)=>{
-   res.status(200).json({
-    data:{
-      skillCourses:req.courses,
-      mostViewedCourses:req.mostViewedCourses
-    }
+// router.post('/get/explore',courseCompress,async(req,res)=>{
+//    res.status(200).json({
+//     data:{
+//       skillCourses:req.courses,
+//       mostViewedCourses:req.mostViewedCourses
+//     }
+//    })
+// })
+
+
+
+
+///limiters
+
+router.get('/explore/:skill',skillFinder,async(req,res)=>{
+    res.json({
+        message:req.query.start,
+        param:req.params,
+        data:req.courses,
+    })
+})
+router.get('/explore/course/popular',mostViewedFinder,async(req,res)=>{
+  res.json({
+      message:req.query,
+      param:req.params,
+      data:req.courses,
+  })
+})
+router.get('/explore/course/new',recentFinder,async(req,res)=>{
+   res.json({
+      message:req.query,
+      param:req.params,
+      data:req.courses,
+      re:'chod'
    })
 })
+
+
+/////
+
+
+
+
 router.get('/get/:courseId/compress',courseCompressSingle,async(req,res)=>{
   res.status(200).json({
      data:req.course

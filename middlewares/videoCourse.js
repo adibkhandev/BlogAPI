@@ -383,23 +383,43 @@ const compress = async(courses,userId) => {
 }
 
 
-const courseCompress = async(req,res,next) => {
-    // const token = req.headers.authorization.split(' ')[1]
-    // const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
+const skillFinder = async(req,res,next) => {
     try{
-        const courses = await Course.find({skills:req.body.skill})
-        const mostViewedCourses = await Course.find().sort({subscribedCount: -1})
+        const {start,end} = req.query
+        const courses = await Course.find({skills:req.params.skill}).limit(end).skip(start)
         const compressedCourses = await compress(courses)
-        const compressedMostViewedCourses = await compress(mostViewedCourses)
-        console.log(compressedMostViewedCourses,'most')
-//        console.log(compressedCourses,'com')
-        req.mostViewedCourses = compressedMostViewedCourses
         req.courses = compressedCourses
         next()
     } catch(err){
         res.status(404).json({err:err})
     }
 }
+
+const mostViewedFinder = async(req,res,next) => {
+    try{
+        const {start,end} = req.query
+        const mostViewedCourses = await Course.find().sort({subscribedCount: -1}).limit(end).skip(start)
+        const compressedMostViewedCourses = await compress(mostViewedCourses)
+        req.courses = compressedMostViewedCourses
+        console.log('foing un')
+        next()
+    } catch(err){
+        res.status(404).json({err:err})
+    }
+}
+
+const recentFinder = async(req,res,next) => {
+    try{
+        const {start,end} = req.query
+        const recentCourses = await Course.find().sort({createdAt: -1}).limit(end).skip(start)
+        const recentCompressedCourses = await compress(recentCourses)
+        req.courses = recentCompressedCourses
+        next()
+    } catch(err){
+        res.status(404).json({err:err})
+    }
+}
+
 const courseCompressSingle = async(req,res,next) => {
     // const token = req.headers.authorization.split(' ')[1]
     // const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
@@ -655,4 +675,4 @@ const deleteCourse = async(req,res,next) => {
 
 
 
-module.exports = {courseUpload,courseCompress,courseCompressSingle,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse,updateVideo,updateTopic,updateCourse}
+module.exports = {courseUpload,courseCompressSingle,skillFinder,mostViewedFinder,recentFinder,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse,updateVideo,updateTopic,updateCourse}
