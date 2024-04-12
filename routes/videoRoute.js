@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 var cors = require('cors');
 const Course = require('../models/course')
+const User = require('../models/user')
 const Video = require('../models/video')
 const {tokenVerify} = require('../middlewares/token')
 const {
@@ -118,7 +119,7 @@ router.get('/get/small/:id',async(req,res)=>{
      }  
 })
 
-
+//found
 router.get('/get/:id',tokenVerify,async(req,res)=>{
   console.log('token',req.headers["authorization"])
   try{
@@ -126,6 +127,7 @@ router.get('/get/:id',tokenVerify,async(req,res)=>{
     console.log('decoded=',req.decoded)
     try{
       const course =  await Course.findOne({_id:req.params.id})
+      const user = await User.findOne({_id:decoded._id})
       const populatedCourse = await course.populate({
         path:'topics',
         model:'Topic',
@@ -134,8 +136,10 @@ router.get('/get/:id',tokenVerify,async(req,res)=>{
             model:'Video',
         }
       })
+      user.lastViewed = course._id
+      await user.save()
       console.log(populatedCourse.topics[0])
-      res.status(200).json({populatedCourse})  
+      res.status(200).json({populatedCourse,user})  
     } catch{
       res.status(404).json({err:'Course not found'})  
     }

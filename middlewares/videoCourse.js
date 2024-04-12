@@ -420,6 +420,31 @@ const recentFinder = async(req,res,next) => {
     }
 }
 
+
+const suggestedFinder = async(req,res,next) => {
+    const user = await User.findOne({_id:decoded._id}) 
+    const skillsGiven = user.skills
+    const lastwatched = await Course.findOne({_id:user.lastViewed})
+    const skillsTaken = lastwatched.skills 
+    const allCollected = [...skillsGiven,...skillsTaken]
+    try{
+        const {start,end} = req.query
+        const perSkillStart = start / allCollected.length
+        const allCourses = await Promise.all(skills.map(async(skill)=>{
+            const courses = await Course.find({skills:skill}).limit(start).skip(end)
+            const courseIdArray = courses.map((course)=>{
+                return course._id
+            })
+            return courseIdArray
+        }))
+        const suggestedCourses = await compress(courseIdArray)
+        req.courses = suggestedCourses
+        next()
+    } catch(err){
+        res.status(404).json({err:err})
+    }
+}
+
 const courseCompressSingle = async(req,res,next) => {
     // const token = req.headers.authorization.split(' ')[1]
     // const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
@@ -675,4 +700,4 @@ const deleteCourse = async(req,res,next) => {
 
 
 
-module.exports = {courseUpload,courseCompressSingle,skillFinder,mostViewedFinder,recentFinder,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse,updateVideo,updateTopic,updateCourse}
+module.exports = {courseUpload,courseCompressSingle,skillFinder,suggestedFinder,mostViewedFinder,recentFinder,addVideo,addTopic,deleteVideo,deleteTopic,deleteCourse,updateVideo,updateTopic,updateCourse}

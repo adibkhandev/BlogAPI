@@ -29,6 +29,11 @@ const userSchema = new mongoose.Schema({
         type:mongoose.Schema.ObjectId,
         ref:'Course',      
         required:false
-    }]
+    }],
+    lastViewed:{
+        type:mongoose.Schema.ObjectId,
+        ref:'Course',      
+        required:false
+    }
 })
 module.exports = mongoose.model('User',userSchema)
