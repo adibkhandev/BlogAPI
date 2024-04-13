@@ -382,6 +382,26 @@ const compress = async(courses,userId) => {
     }))
 }
 
+const compressFromId = async(courseIdArray) => {
+    try{
+        return await Promise.all(courseIdArray.map(async(id)=>{
+             const course = await Course.findOne({_id:id}) 
+             const author = await User.findOne({_id:course.uploadedBy})
+                return {
+                    courseId:course._id,
+                    userId:author?author._id:null,
+                    courseName:course.title,
+                    cover:course.coverPhotoLink,
+                    videos:course.videoNumber,
+                    uploaderName:author?author.username:'unknown',
+                    uploaderPicture:author?author.pfp:null,
+                }
+        }))
+    } catch{
+        res.status(404).json({err:err})
+    }
+}
+
 
 const skillFinder = async(req,res,next) => {
     try{
@@ -401,7 +421,7 @@ const mostViewedFinder = async(req,res,next) => {
         const mostViewedCourses = await Course.find().sort({subscribedCount: -1}).limit(end).skip(start)
         const compressedMostViewedCourses = await compress(mostViewedCourses)
         req.courses = compressedMostViewedCourses
-        console.log('foing un')
+        // console.log('foing un')
         next()
     } catch(err){
         res.status(404).json({err:err})
@@ -422,23 +442,38 @@ const recentFinder = async(req,res,next) => {
 
 
 const suggestedFinder = async(req,res,next) => {
-    const user = await User.findOne({_id:decoded._id}) 
+    console.log('running')
+    const user = await User.findOne({_id:req.decoded._id}) 
     const skillsGiven = user.skills
     const lastwatched = await Course.findOne({_id:user.lastViewed})
     const skillsTaken = lastwatched.skills 
     const allCollected = [...skillsGiven,...skillsTaken]
+    const refinedCollects = [...new Set(allCollected)]
     try{
         const {start,end} = req.query
         const perSkillStart = start / allCollected.length
-        const allCourses = await Promise.all(skills.map(async(skill)=>{
-            const courses = await Course.find({skills:skill}).limit(start).skip(end)
+        const allCourses = await Promise.all(refinedCollects.map(async(skill)=>{
+            const courses = await Course.find({skills:skill}).sort({subscribedCount: -1}).limit(end).skip(start)
             const courseIdArray = courses.map((course)=>{
                 return course._id
             })
             return courseIdArray
         }))
-        const suggestedCourses = await compress(courseIdArray)
+        console.log(allCourses)
+        const brokenCourseIdArray = allCourses.flat(Infinity)
+        // const refinedCourseIdArray = [...new Set(brokenCourseIdArray)]
+        // const refinedCourseIdArray = Array.from(new Set(brokenCourseIdArray))
+        const refinedCourseIdArray = brokenCourseIdArray.reduce((acc, objectId) => {
+            const stringId = objectId.toString();
+            if (!acc.includes(stringId)) {
+                acc.push(stringId);
+            }
+            return acc;
+        }, []);
+        console.log(refinedCourseIdArray,'list',refinedCourseIdArray)
+        const suggestedCourses = await compressFromId(refinedCourseIdArray)
         req.courses = suggestedCourses
+        console.log('suggesting',req.courses)
         next()
     } catch(err){
         res.status(404).json({err:err})

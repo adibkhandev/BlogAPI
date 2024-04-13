@@ -19,6 +19,7 @@ const {
   skillFinder,
   mostViewedFinder,
   recentFinder,
+  suggestedFinder,
   }  = require('../middlewares/videoCourse');
 const fs = require('fs')
 const path = require('path')
@@ -218,6 +219,14 @@ router.get('/explore/course/new',recentFinder,async(req,res)=>{
       data:req.courses,
       re:'chod'
    })
+})
+router.get('/explore/course/suggested',tokenVerify,suggestedFinder,async(req,res)=>{
+  res.json({
+     message:req.query,
+     param:req.params,
+     data:req.courses,
+     re:'chod'
+  })
 })
 
 

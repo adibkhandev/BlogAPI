@@ -28,7 +28,7 @@ const tokenVerify = (req,res,next) =>{
         const token = req.headers.authorization.split(' ')[1]
         const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
         req.decoded = decoded
-        console.log(token,'ffff')
+        // console.log(token,'ffff')
         next()
     } catch(err){
         res.status(400).json({data:'fck'})
