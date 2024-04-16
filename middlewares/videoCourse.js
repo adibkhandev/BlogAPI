@@ -672,6 +672,7 @@ const deleteTopic = async(req,res,next) => {
            const course = await Course.findOne({_id:req.params.courseId})
            const topic = await Topic.findOne({_id:req.params.topicId})
            if(!user.uploadedCourses.includes(course._id) || !course.topics.includes(topic._id)) res.status(400).json({message:'Unautorized'})
+           if(course.topics.length==1) return res.status(500).json({message:"Can't delete only topic of course"})
            deleteFiles(topic.videos)
            await Topic.deleteOne({_id:req.params.topicId})
            next()
