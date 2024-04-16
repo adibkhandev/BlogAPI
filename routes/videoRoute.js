@@ -43,9 +43,19 @@ var fileStorage = multer.diskStorage({
    }
 });
 
+const fileFilter = function (req, file, cb) {
+  const extname = path.extname(file.originalname).toLowerCase();
+  if (extname === '.jpg' || extname === '.jpeg' || extname === '.png' || extname ==='.mp4') {
+    cb(null, true);
+  } else {
+    cb(new Error('Unsupported filetype'), false);
+  }
+}
+
 var upload = multer(
    { 
-     storage: fileStorage, 
+     storage: fileStorage,
+     fileFilter:fileFilter, 
      limits:
        { 
          fileSize:'10mb' 
@@ -241,5 +251,18 @@ router.get('/get/:courseId/compress',courseCompressSingle,async(req,res)=>{
   })
 })
 
+
+router.use(function (err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    res.status(400).send('Multer error: ' + err.message);
+  } else {
+    next(err); // Pass the error to the default error handler
+  }
+});
+
+// Default error handler middleware
+router.use(function (err, req, res, next) {
+  res.status(500).send('Server error: ' + err.message);
+});
 
 module.exports = router
