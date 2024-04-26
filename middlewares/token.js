@@ -23,6 +23,42 @@ const generateRefreshToken = (username,password,id) => {
     return jwt.sign({username:username,password:password,_id:id},process.env.SECRET_RTOKEN,{expiresIn:'2d'})
 }
 
+
+const changePassword = async(req,res,next) => {
+    console.log(req.body,req.decoded)
+    if(req.body.lastPassword!=req.body.lastPasswordConfirmed) res.status(400).json({message:"Passwords don't match"})
+    try{
+        const user = await User.findOne({_id:req.decoded._id})
+        console.log(user.password,'ppp')
+        // bcrypt.hash(req.body.password,saltRounds,async(err,hash)=>{
+
+        // })
+        bcrypt.compare(req.body.lastPassword,user.password,(err,result)=>{
+            console.log(result,'res',err)
+            if(err) res.status(500).json({message:'Something went wrong'})
+            if(!result) res.status(500).json({message:'Password mismatch'})
+            if(result) {
+                bcrypt.hash(req.body.newPassword,saltRounds,async(err,hash)=>{
+                    if(err)res.status(500).json({message:'Server error please try again'})
+                    else{
+                        const token = generateAccessToken(user.username,req.body.newPassword,user._id)
+                        req.token = token
+                        const refreshToken = generateRefreshToken(user.username,req.body.newPassword,user._id)
+                        req.refreshToken = refreshToken
+                        user.password = hash
+                        req.user  = await user.save()
+                        next()
+                    }
+                })
+            }
+        })
+    }
+    catch{
+        res.status(404).json({message:'User not found'})
+    }
+}
+
+
 const tokenVerify = (req,res,next) =>{
     try{
         const token = req.headers.authorization.split(' ')[1]
@@ -71,7 +107,8 @@ const userRegister = async(req,res,next) => {
         res.status(500).json({message:err})
     }
 }
-const fs = require('fs')
+const fs = require('fs');
+const { decode } = require('querystring');
 const userUpdate = async(req,res,next) => {
     const token = req.headers.authorization.split(' ')[1]
     console.log(token,'tok')
@@ -210,4 +247,4 @@ const tokenRefresh = async(req,res,next) => {
 }
 
 
-module.exports = { userUpdate , userRegister , userLogin , tokenRefresh , tokenVerify}
+module.exports = { userUpdate , userRegister , userLogin , tokenRefresh , tokenVerify , changePassword}
