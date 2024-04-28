@@ -446,8 +446,11 @@ const suggestedFinder = async(req,res,next) => {
     const user = await User.findOne({_id:req.decoded._id}) 
     const skillsGiven = user.skills
     const lastwatched = await Course.findOne({_id:user.lastViewed})
-    const skillsTaken = lastwatched.skills 
-    const allCollected = [...skillsGiven,...skillsTaken]
+    const skillsTaken = lastwatched ? lastwatched.skills : null
+    var allCollected
+    if(!skillsGiven.length && !lastwatched) return res.status(400).json({message:'Unauthorized'})
+    if(!lastwatched) allCollected = [...skillsGiven]
+    else allCollected = [...skillsGiven,...skillsTaken]
     const refinedCollects = [...new Set(allCollected)]
     try{
         const {start,end} = req.query
