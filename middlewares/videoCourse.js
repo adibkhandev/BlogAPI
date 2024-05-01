@@ -50,6 +50,8 @@ const deleteVideo = async(req,res,next) => {
         try{
             const course = await Course.findOne({_id:req.params.courseId})
             if(course.topics.includes(req.params.topicId)){
+                const topic = await Topic.findOne({_id:req.params.topicId})
+                if(topic.videos && topic.videos.length<2) res.status(400).json({message:"Can't delete last video"}) 
                 try{
 //                    console.log(req.body.videos,'dasdsadsadsa')
                     deleteFiles(req.body.videos)
