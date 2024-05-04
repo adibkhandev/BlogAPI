@@ -41,37 +41,6 @@ const deleteFiles = async(videos) => {
     }))
 }
 
-
-const deleteVideo = async(req,res,next) => {
-    try{
-        const token = req.headers.authorization.split(' ')[1]
-        const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
-        const userInstance = await User.findOne({_id:decoded._id})
-        try{
-            const course = await Course.findOne({_id:req.params.courseId})
-            if(course.topics.includes(req.params.topicId)){
-                const topic = await Topic.findOne({_id:req.params.topicId})
-                if(topic.videos && topic.videos.length<2) res.status(400).json({message:"Can't delete last video"}) 
-                try{
-//                    console.log(req.body.videos,'dasdsadsadsa')
-                    deleteFiles(req.body.videos)
-//            console.log('crossing promise')
-            next()
-                } catch{
-                    res.status(400).json({err:'could not map'})
-                }
-            }
-            else{
-                res.status(500).json({err:'Topic not found'})
-            }
-        } catch{
-            res.status(500).json({err:'course not found'})
-        }
-    } catch {
-        res.status(400).json({err:'Unauthorized'})
-    }
-}
-
 const courseUpload = async(req,res,next) => {
 //    // console.log(req.files,'files',req.body,path.extname(req.files.coverPhoto[0].originalname))
     
@@ -669,6 +638,50 @@ const updateTopic = async(req,res,next) => {
 
 //delete
 
+
+
+const deleteVideo = async(req,res,next) => {
+    try{
+        const token = req.headers.authorization.split(' ')[1]
+        const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
+        const userInstance = await User.findOne({_id:decoded._id})
+        try{
+            const course = await Course.findOne({_id:req.params.courseId})
+            if(course.topics.includes(req.params.topicId)){
+                const topic = await Topic.findOne({_id:req.params.topicId})
+                if(topic.videos && topic.videos.length<2) res.status(400).json({message:"Can't delete last video"}) 
+                try{
+                    deleteFiles(req.body.videos)
+                console.log(req.body.videos,'kist')
+                    req.body.videos.map((video)=>{
+                        topic.videos.pull(video)
+                    })
+                    const saved = await topic.save()
+                    await Promise.all(saved.videos.map(async(video,index)=>{
+                        const videoInstance = await Video.findOne({_id:video})
+                        if(!videoInstance) return
+                        console.log(videoInstance,'ins',video)
+                        videoInstance.number = saved.number + ((index+1)/100)
+                        await videoInstance.save()
+                    }))
+                    console.log(saved.videos,'array')
+
+//            console.log('crossing promise')
+            next()
+                } catch{
+                    res.status(400).json({err:'could not map'})
+                }
+            }
+            else{
+                res.status(500).json({err:'Topic not found'})
+            }
+        } catch{
+            res.status(500).json({err:'course not found'})
+        }
+    } catch {
+        res.status(400).json({err:'Unauthorized'})
+    }
+}
 
 const deleteTopic = async(req,res,next) => {
     try{
