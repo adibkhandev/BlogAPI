@@ -692,6 +692,24 @@ const deleteTopic = async(req,res,next) => {
            if(!user.uploadedCourses.includes(course._id) || !course.topics.includes(topic._id)) res.status(400).json({message:'Unautorized'})
            if(course.topics.length==1) return res.status(500).json({message:"Can't delete only topic of course"})
            deleteFiles(topic.videos)
+            // req.body.videos.map((video)=>{
+            course.topics.pull(topic)
+            const courseSaved = await course.save()
+            // })
+            await Promise.all(courseSaved.topics.map(async(topic,index)=>{
+                const topicInstance = await Topic.findOne({_id:topic})
+                if(!topicInstance) return
+                console.log(topicInstance,'ins',topic)
+                topicInstance.number = index+1
+                const saved = await topicInstance.save()
+                await Promise.all(saved.videos.map(async(video,index)=>{
+                    const videoInstance = await Video.findOne({_id:video})
+                    if(!videoInstance) return
+                    console.log(videoInstance,'ins',video)
+                    videoInstance.number = saved.number + ((index+1)/100)
+                    await videoInstance.save()
+                }))
+            }))
            await Topic.deleteOne({_id:req.params.topicId})
            next()
         } catch{
