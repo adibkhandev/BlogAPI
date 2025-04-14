@@ -50,7 +50,7 @@ router.get('/:username',async(req,res)=>{
             id:populatedUser._id,
             username:populatedUser.username,
             skills:populatedUser.skills,
-            pfp:populatedUser.pfp,
+            pfp:populatedUser.pfp?populatedUser.pfp:null,
             userType:populatedUser.userType,
             uploadedCourses:landingUserUploaded,
             subscribedCourses:landingUserSubscribed,

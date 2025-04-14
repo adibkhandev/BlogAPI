@@ -14,6 +14,44 @@ const video = require('../models/video')
 
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
+const uploadVideo = (filename) => {
+    try {
+               
+        const inputVid = './routes/uploads/videos/' + filename
+        const outputVid = './routes/uploads/videos/' + filename.replace('mp4','webm')
+        ffmpeg(inputVid)
+           .videoCodec('libvpx-vp9')                // Use VP9 codec
+           .audioCodec('libopus')                   // Opus is the best audio for WebM
+           .outputOptions([
+               '-crf 30',                             // Constant quality mode (0–63; lower is better)
+               '-b:v 0',                              // Let CRF control bitrate
+           ])
+           .on('error', (err) => console.error('Error:', err))
+           .on('end', () =>{
+//                        console.log('Conversion done!')
+               fs.unlink(inputVid,(err)=>{
+                           console.log('deletes')
+               })
+           })
+           .screenshot({
+               timestamps: ['00:00:03'],
+               filename: `screenshot-${filename.replace('mp4','png')}`,
+               folder: './routes/uploads/images',
+           })
+           .on('end',()=> {
+              console.log('screenshots')
+           })
+           .on('error',(error)=>{
+              console.log(error)
+
+           })
+           .save(outputVid, { end: true })
+           return filename.replace('mp4','webm')
+           
+   } catch{
+//                 console.log('error in ffmpeg')
+   }
+}
 const deleteFiles = async(videos) => {
     await Promise.all(videos.map(async(video)=>{
 //        console.log(video,'mapping')
@@ -52,43 +90,14 @@ const courseUpload = async(req,res,next) => {
     if(decoded){
         try{
             const userInstance = await User.findOne({_id:decoded._id})
-            try {
-               
-                 const inputVid = './routes/uploads/videos/' + req.files.videoFile[0].filename
-                 const outputVid = './routes/uploads/videos/' + req.files.videoFile[0].filename.replace('mp4','avi')
-                 ffmpeg(inputVid)
-                    .format('avi')
-                    .on('error', (err) => console.error('Error:', err))
-                    .on('end', () =>{
-//                        console.log('Conversion done!')
-                        fs.unlink(inputVid,(err)=>{
-//                            console.log(err)
-                        })
-                    })
-                    .screenshot({
-                        timestamps: ['00:00:03'],
-                        filename: `screenshot-${req.files.videoFile[0].filename.replace('mp4','png')}`,
-                        folder: './routes/uploads/images',
-                    })
-                    .on('end',()=> {
-                       console.log('screenshots')
-                    })
-                    .on('error',(error)=>{
-                       console.log(error)
-
-                    })
-                    .save(outputVid, { end: true })
-                    
-            } catch{
-//                 console.log('error in ffmpeg')
-            }
+            const videoFileName = uploadVideo(req.files.videoFile[0].filename)
             
             try{
                 const newVideo = new Video({
                     number:1.01,
                     title:req.body.title,
                     description:req.body.description,
-                    videoLink:'/videos/' + req.files.videoFile[0].filename,
+                    videoLink:'/videos/' + videoFileName,
                     thumbnailLink:'/images/' + `screenshot-${req.files.videoFile[0].filename.replace('mp4','png')}`,
                     uploadedBy:decoded._id
                 })
@@ -175,6 +184,12 @@ const courseUpload = async(req,res,next) => {
     
    
 }
+
+
+
+
+
+
 const addVideo = async(req,res,next) => {
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(JSON.parse(token),process.env.SECRET_TOKEN)
@@ -188,34 +203,7 @@ const addVideo = async(req,res,next) => {
 //        console.log(LastVideo,'last')
         const newNum =LastVideo ? LastVideo.number + 0.01: topic.number + 0.01;
 //        console.log(newNum)
-        try {
-            const inputVid = './routes/uploads/videos/' + req.file.filename
-            const outputVid = './routes/uploads/videos/' + req.file.filename.replace('mp4','avi')
-            ffmpeg(inputVid)
-            .format('avi')
-            .on('error', (err) => console.error('Error:', err))
-            .on('end', () =>{
-//                console.log('Conversion done!')
-                fs.unlink(inputVid,(err)=>{
-//                    console.log(err)
-                })
-            })
-            .screenshot({
-                timestamps: ['00:00:03'],
-                filename: `screenshot-${req.file.filename.replace('mp4','png')}`,
-                folder: './routes/uploads/images',
-            })
-            .on('end',()=> {
-               console.log('screenshots')
-            })
-            .on('error',(error)=>{
-               console.log(error)
-
-            })
-            .save(outputVid, { end: true })
-        } catch{
-//                console.log('error in ffmpeg')
-        }
+        uploadVideo(req.file.filename)
         const newVideo = new Video({
             number:newNum,
             title:req.body.title,
@@ -278,34 +266,7 @@ const addTopic = async(req,res,next) => {
                 thumbnailLink:'/images/' + `screenshot-${req.file.filename.replace('mp4','png')}`,
             })
             const videoSaved = await newVideo.save()
-            try {
-                const inputVid = './routes/uploads/videos/' + req.file.filename
-                const outputVid = './routes/uploads/videos/' + req.file.filename.replace('mp4','avi')
-                ffmpeg(inputVid)
-                .format('avi')
-                .on('error', (err) => console.error('Error:', err))
-                .on('end', () =>{
-//                    console.log('Conversion done!')
-                    fs.unlink(inputVid,(err)=>{
-//                        console.log(err)
-                    })
-                })
-                .screenshot({
-                    timestamps: ['00:00:03'],
-                    filename: `screenshot-${req.file.filename.replace('mp4','png')}`,
-                    folder: './routes/uploads/images',
-                })
-                .on('end',()=> {
-                   console.log('screenshots')
-                })
-                .on('error',(error)=>{
-                   console.log(error)
-
-                })
-                .save(outputVid, { end: true })
-            } catch{
-//                    console.log('error in ffmpeg')
-            }
+            uploadVideo(req.file.filename)
             course.videoNumber += 1
                 const newTopic = new Topic({
                     title:req.body.topicTitle,
@@ -468,7 +429,7 @@ const courseCompressSingle = async(req,res,next) => {
                 cover:course.coverPhotoLink,
                 videos:course.videoNumber,
                 uploaderName:author.username,
-                uploaderPicture:author.pfp,
+                uploaderPicture:author.pfp?author.pfp:null,
         }
         req.course = compressedCourse
         next()

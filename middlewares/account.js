@@ -57,12 +57,15 @@ const unSubscribeCourse = async(req,res,next) => {
         const userInstance = await User.findOne({_id:decoded._id})
         const courseInstance = await Course.findOne({_id:req.body.courseId})
         if(userInstance && courseInstance){
+            console.log(courseInstance,'ins')
             // console.log(courseInstance.subscribedCount,'cpint')
-            if(!userInstance.subscribedCourses.includes(courseInstance._id) || courseInstance.subscribedCount<1) res.status(400).json('Nai already')
+            if(!userInstance.subscribedCourses.includes(courseInstance._id)) res.status(400).json('Nai already')
+            if(courseInstance.subscribedCount<1) res.status(500).json({data:'Something went wrong'})
             else{
                 try{
                     courseInstance.subscribedCount = courseInstance.subscribedCount - 1
-                    userInstance.subscribedCourses.pop(courseInstance._id)
+                    console.log(courseInstance._id,'offffffffffffff')
+                    userInstance.subscribedCourses.remove({_id:req.body.courseId})
                     await courseInstance.save()
                     const savedUser = await userInstance.save()
                     const populatedUser = await savedUser.populate({
@@ -79,7 +82,7 @@ const unSubscribeCourse = async(req,res,next) => {
                     }) 
                     console.log(populatedUser)
                     req.updatedUser = populatedUser
-                    console.log('unsub - ',courseInstance._id) 
+                    // console.log('unsub - ',courseInstance._id) 
                     next()
                 } catch {
                     res.status(405).json({err:"Couldn't update user"})
